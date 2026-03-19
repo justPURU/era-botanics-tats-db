@@ -969,27 +969,61 @@ function renderTATSection(monthly, weekly) {
 
 function renderWarehouseSection(wh, delays) {
   if (delays?.length) {
-    const cols=[{txt:"#059669",bg:"rgba(5,150,105,0.12)"},{txt:"#2563EB",bg:"rgba(37,99,235,0.1)"},{txt:"#D97706",bg:"rgba(217,119,6,0.1)"},{txt:"#EF4444",bg:"rgba(239,68,68,0.1)"},{txt:"#7C3AED",bg:"rgba(124,58,237,0.1)"}];
-    const max=Math.max(...delays.map(d=>d.pct),1);
-    document.getElementById("pickupDelayBars").innerHTML = delays.map((d,i) => `
-      <div class="bucket-row">
-        <div class="bucket-label" style="width:110px;font-size:0.65rem">${d.label}</div>
-        <div class="bucket-track"><div class="bucket-fill" style="width:${(d.pct/max*100).toFixed(1)}%;background:${cols[i].bg}"><span style="color:${cols[i].txt}">${d.pct}%</span></div></div>
-        <div class="bucket-num">${fmt(d.count)}</div>
-      </div>
-    `).join("");
+    const cols = [
+      { txt: "#059669", bg: "rgba(5,150,105,0.12)" },
+      { txt: "#2563EB", bg: "rgba(37,99,235,0.1)" },
+      { txt: "#D97706", bg: "rgba(217,119,6,0.1)" },
+      { txt: "#EF4444", bg: "rgba(239,68,68,0.1)" },
+      { txt: "#7C3AED", bg: "rgba(124,58,237,0.1)" }
+    ];
+
+    const max = Math.max(...delays.map(d => d.pct || 0), 1);
+
+    document.getElementById("pickupDelayBars").innerHTML =
+      delays.map((d, i) => `
+        <div class="bucket-row">
+          <div class="bucket-label">${d.label}</div>
+          <div class="bucket-track">
+            <div class="bucket-fill" 
+              style="width:${((d.pct || 0) / max * 100).toFixed(1)}%;
+                     background:${cols[i % cols.length].bg}">
+              <span style="color:${cols[i % cols.length].txt}">
+                ${d.pct || 0}%
+              </span>
+            </div>
+          </div>
+          <div class="bucket-num">${fmt(d.count || 0)}</div>
+        </div>
+      `).join("");
   }
+
   if (wh?.length) {
     deferChart("warehouse", () => {
-      mkChart("whOnTimeChart","bar",{ labels:wh.map(w=>w.warehouse), datasets:[{ label:"On-Time %", data:wh.map(w=>w.onTimePct), backgroundColor:wh.map(w=>(w.onTimePct||0)>=80?"rgba(5,150,105,0.15)":"rgba(239,68,68,0.12)"), borderColor:wh.map(w=>(w.onTimePct||0)>=80?"#059669":"#EF4444"), borderWidth:1.5, borderRadius:5 }] },{ plugins:{legend:{display:false}}, scales:{ x:xOpts(""),y:{...yOpts(),max:100,beginAtZero:true} } });
+      mkChart("whOnTimeChart", "bar", {
+        labels: wh.map(w => w.name),
+        datasets: [{
+          label: "On-Time %",
+          data: wh.map(w => w.onTimePct),
+          backgroundColor: "rgba(5,150,105,0.15)",
+          borderColor: "#059669",
+          borderWidth: 1.5,
+          borderRadius: 6
+        }]
+      }, barOpts("%"));
     });
+
     document.getElementById("warehouseTable").innerHTML = tableHTML(
-      ["Warehouse","Volume","Avg Pickup Delay","On-Time %","Avg Delivery TAT"],
-      wh.map(w => [w.warehouse,fmt(w.volume),w.avgPickupDelay!=null?(w.avgPickupDelay<=0?`<span class="badge b-green">On Time</span>`:`<span class="badge b-amber">+${w.avgPickupDelay}d</span>`):"–",pctBadge(w.onTimePct,80,true),tatBadge(w.avgTAT)])
+      ["Warehouse", "Volume", "On-Time %", "Avg Delay"],
+      wh.map(w => [
+        w.name,
+        fmt(w.volume),
+        pctBadge(w.onTimePct, 80, true),
+        (w.avgDelay ?? 0) + "d"
+      ])
     );
   }
 }
-
+  
 function renderExceptionsSection(s, tiers, ndr) {
   if (!s) return;
   document.getElementById("exceptionKPIs").innerHTML = [
