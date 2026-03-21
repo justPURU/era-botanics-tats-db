@@ -584,6 +584,49 @@ function buildMonthChips() {
   }).join("");
 }
 
+// Called after first successful data load — syncs MONTH_ORDER to actual BQ labels.
+// This handles any case/format mismatch between configured labels and stored values.
+function syncMonthOrderFromData() {
+  var overall = DATA.overall || [];
+  if (!overall.length) return;
+
+  // Collect unique month_labels from data, sorted by our canonical order
+  var seenRaw = {};
+  overall.forEach(function(r){ if (r.month_label) seenRaw[r.month_label] = 1; });
+  var rawLabels = Object.keys(seenRaw);
+
+  if (!rawLabels.length) return;
+
+  // Check if any raw label differs from MONTH_ORDER entries
+  var normOrder = MONTH_ORDER.map(function(m){ return m.trim().toLowerCase(); });
+  var mismatch = rawLabels.some(function(l){
+    return normOrder.indexOf(l.trim().toLowerCase()) === -1;
+  });
+
+  if (mismatch) {
+    console.log("[TAT] month_label mismatch detected. Raw labels:", rawLabels);
+    console.log("[TAT] Expected MONTH_ORDER:", MONTH_ORDER);
+  }
+
+  // Build a normalised lookup: lowercase → original raw label
+  var normToRaw = {};
+  rawLabels.forEach(function(l){ normToRaw[l.trim().toLowerCase()] = l; });
+
+  // Remap MONTH_ORDER to use the actual stored labels
+  var remapped = MONTH_ORDER.map(function(m){
+    var norm = m.trim().toLowerCase();
+    return normToRaw[norm] || m;  // use raw if matched, keep original if not
+  });
+
+  // Only update if something actually changed
+  var changed = remapped.some(function(m, i){ return m !== MONTH_ORDER[i]; });
+  if (changed) {
+    console.log("[TAT] Remapping MONTH_ORDER to actual BQ labels:", remapped);
+    MONTH_ORDER = remapped;
+    buildMonthChips();  // rebuild chips with corrected labels
+  }
+}
+
 function onMonthChk(val) {
   if (val === "ALL") {
     // Select ALL — clear individual selection
@@ -623,6 +666,7 @@ function onMonthChk(val) {
       });
     }
   }
+  filterByMonth._logged = false;  // reset debug log for new data
   updateRangeBadge();
   if (Object.keys(DATA).length > 0) renderAll();
 }
@@ -641,8 +685,21 @@ function updateRangeBadge() {
 // Filter DATA rows by currently selected months
 function filterByMonth(rows) {
   if (!selectedMonths.length) return rows;
+
+  // Debug: log what month_labels are actually in the data (once)
+  if (!filterByMonth._logged && rows.length > 0) {
+    filterByMonth._logged = true;
+    var actualLabels = {};
+    rows.forEach(function(r){ actualLabels[r.month_label] = 1; });
+    console.log("[TAT] Actual month_labels in DATA:", Object.keys(actualLabels));
+    console.log("[TAT] selectedMonths:", selectedMonths);
+  }
+
+  // Normalise both sides: lowercase + collapse spaces for comparison
+  var normSelected = selectedMonths.map(function(m){ return m.trim().toLowerCase(); });
   return rows.filter(function(r) {
-    return selectedMonths.indexOf(r.month_label) !== -1;
+    var lbl = (r.month_label || "").trim().toLowerCase();
+    return normSelected.indexOf(lbl) !== -1;
   });
 }
 
@@ -759,6 +816,7 @@ function refreshDashboard() {
     localStorage.setItem("tat_last_sync", now);
     document.getElementById("syncBadge").textContent = "Synced " + now;
 
+    syncMonthOrderFromData();  // sync MONTH_ORDER to actual BQ labels
     renderAll();
     showToast("success", "Dashboard refreshed successfully", 4000);
 
