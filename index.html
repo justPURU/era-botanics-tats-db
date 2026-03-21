@@ -305,6 +305,26 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
       <div style="margin-top:14px">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
       </div>
+      <div style="margin-top:14px">
+        <div class="card">
+          <div class="card-hd">
+            <div><div class="card-ttl">Tier 1 City — Monthly TAT Performance</div><div class="card-sub">Bangalore · Delhi/NCR · Mumbai · Hyderabad · Chennai · Pune · Kolkata · Ahmedabad</div></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
+            <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted)">City:</span>
+            <button class="chip on" id="t1city-ALL" onclick="setT1City('ALL')">All</button>
+            <button class="chip" id="t1city-Bangalore"  onclick="setT1City('Bangalore')">Bangalore</button>
+            <button class="chip" id="t1city-Delhi"      onclick="setT1City('Delhi/NCR')">Delhi/NCR</button>
+            <button class="chip" id="t1city-Mumbai"     onclick="setT1City('Mumbai')">Mumbai</button>
+            <button class="chip" id="t1city-Hyderabad"  onclick="setT1City('Hyderabad')">Hyderabad</button>
+            <button class="chip" id="t1city-Chennai"    onclick="setT1City('Chennai')">Chennai</button>
+            <button class="chip" id="t1city-Pune"       onclick="setT1City('Pune')">Pune</button>
+            <button class="chip" id="t1city-Kolkata"    onclick="setT1City('Kolkata')">Kolkata</button>
+            <button class="chip" id="t1city-Ahmedabad"  onclick="setT1City('Ahmedabad')">Ahmedabad</button>
+          </div>
+          <div class="tbl-wrap" id="tier1CityTable"></div>
+        </div>
+      </div>
     </div>
 
     <!-- TIER -->
@@ -794,23 +814,29 @@ function refreshDashboard() {
     if (s > 5) showToast("loading", "Loading data... (" + s + "s)", 0);
   }, 2000);
 
+    // month-level overall is always fetched for TAT/trend charts
+  // even when weekly granularity is selected
+  var mParam = month !== "ALL" ? month : null;
   var fetchAll = [
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"overall",   months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"tier",       months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"warehouse",  months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"courier",    months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"city",       months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"state",      months: month !== "ALL" ? month : null }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran, dimension:"status",     months: month !== "ALL" ? month : null }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"overall",   months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"tier",       months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"warehouse",  months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"courier",    months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"city",       months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"state",      months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"status",     months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"overall",    months:mParam }), 60000),
   ];
 
   Promise.all(fetchAll).then(function(results) {
     clearInterval(counter);
     DATA = {};
-    var keys = ["overall","tier","warehouse","courier","city","state","status"];
+    var keys = ["overall","tier","warehouse","courier","city","state","status","overall_month"];
     results.forEach(function(res, i) {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
+    // overall_month is always month-granularity regardless of gran selector
+    if (!DATA.overall_month) DATA.overall_month = DATA.overall;
 
     var now = new Date().toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
     localStorage.setItem("tat_last_sync", now);
@@ -856,10 +882,13 @@ function renderAll() {
   renderGeoSection(city, state);
   renderWarehouseSection(whRows);
   renderCourierSection(courier);
+  var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
+  var cityForTier1 = filterByMonth(DATA.city || []);
   deferChart("tat", function() {
-    renderTATTrend(overall);
-    renderBreachTrend(overall);
-    renderTATTable(overall);
+    renderTATTrend(overallMonth);
+    renderBreachTrend(overallMonth);
+    renderTATTable(overallMonth);
+    renderTier1CityTable(cityForTier1);
   });
   deferChart("trends", function() {
     renderWeeklyCharts(overall);
@@ -1123,6 +1152,83 @@ function renderTATTable(rows) {
       fmtN(r.tat_0_2),fmtN(r.tat_3_4),fmtN(r.tat_5_7),fmtN(r.tat_8_12),fmtN(r.tat_gt12)
     ];})
   );
+}
+
+// ── Tier 1 City TAT Table ────────────────────────────────────
+var activeT1City = "ALL";
+var TIER1_CITIES = ["Bangalore","Delhi/NCR","Mumbai","Hyderabad","Chennai","Pune","Kolkata","Ahmedabad"];
+
+function setT1City(city) {
+  activeT1City = city;
+  // Update chip styles
+  document.querySelectorAll("[id^='t1city-']").forEach(function(el){
+    el.classList.remove("on");
+  });
+  var safeId = "t1city-" + (city === "Delhi/NCR" ? "Delhi" : city === "ALL" ? "ALL" : city);
+  var el = document.getElementById(safeId);
+  if (el) el.classList.add("on");
+  // Re-render table
+  var cityRows = filterByMonth(DATA.city || []);
+  renderTier1CityTable(cityRows);
+}
+
+function renderTier1CityTable(rows) {
+  var container = document.getElementById("tier1CityTable");
+  if (!container) return;
+  if (!rows.length) { container.innerHTML = "<div class='empty'><div class='ei'>🏙</div><p>No data</p></div>"; return; }
+
+  // Filter to Tier 1 cities only — match on tier_1_city or shipping_city
+  var t1Cities = TIER1_CITIES;
+  var cityRows = rows.filter(function(r) {
+    var city = (r.dimension_value || "").trim();
+    // Check if any T1 city name is contained (handles "Delhi" matching "Delhi/NCR")
+    return t1Cities.some(function(c){
+      return city.toLowerCase().indexOf(c.toLowerCase().replace("/ncr","").replace("delhi","delhi")) !== -1 ||
+             c.toLowerCase().indexOf(city.toLowerCase()) !== -1;
+    });
+  });
+
+  // Filter by selected city
+  if (activeT1City !== "ALL") {
+    cityRows = cityRows.filter(function(r) {
+      var city = (r.dimension_value || "").toLowerCase();
+      var sel  = activeT1City.toLowerCase().replace("/ncr","");
+      return city.indexOf(sel) !== -1 || sel.indexOf(city) !== -1;
+    });
+  }
+
+  if (!cityRows.length) {
+    container.innerHTML = "<div class='empty'><p>No Tier 1 city data found. Ensure the <strong>Tier 1 City</strong> column is populated in your sheet and re-uploaded.</p></div>";
+    return;
+  }
+
+  // Pivot: city × month grid
+  var months  = MONTH_ORDER.filter(function(m){
+    return cityRows.some(function(r){ return r.month_label === m; });
+  });
+  var cities  = {};
+  cityRows.forEach(function(r){
+    var city = r.dimension_value;
+    if (!cities[city]) cities[city] = {};
+    cities[city][r.month_label] = r;
+  });
+
+  var headers = ["City"].concat(months).concat(["Avg TAT","Breach %"]);
+  var rowData  = Object.keys(cities).sort().map(function(city) {
+    var allTAT = 0, allTATn = 0, allBreach = 0, allBreachn = 0;
+    var cells = months.map(function(m) {
+      var r = cities[city][m];
+      if (!r) return "--";
+      if (r.avg_delivery_tat !== null) { allTAT += r.avg_delivery_tat; allTATn++; }
+      if (r.pct_breach !== null)       { allBreach += r.pct_breach; allBreachn++; }
+      return tatBdg(r.avg_delivery_tat);
+    });
+    var avgTAT   = allTATn    ? round2(allTAT/allTATn)       : null;
+    var avgBreach= allBreachn ? round2(allBreach/allBreachn)  : null;
+    return [city].concat(cells).concat([tatBdg(avgTAT), pctBdg(avgBreach,30,false)]);
+  });
+
+  container.innerHTML = tblHTML(headers, rowData);
 }
 
 function renderTierSection(rows) {
