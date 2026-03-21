@@ -534,14 +534,15 @@ document.addEventListener("DOMContentLoaded", function() {
   buildMonthSelect("upMonth");
   renderCfgRows();
 
-  var cached = localStorage.getItem("tat_cache_v2");
-  if (cached) {
-    try {
-      DATA = JSON.parse(cached);
-      renderAll();
-      document.getElementById("syncBadge").textContent =
-        "Cached " + (localStorage.getItem("tat_last_sync") || "");
-    } catch(e) { localStorage.removeItem("tat_cache_v2"); }
+  // Clear any stale oversized cache from previous versions
+  try { localStorage.removeItem("tat_cache_v2"); } catch(e) {}
+
+  // No localStorage cache for DATA — BQ queries are fast enough (~3s)
+  // and cache exceeds 5MB quota with 8 months of data.
+  // Config + URL are still stored in localStorage (small, text-only).
+  var lastSync = localStorage.getItem("tat_last_sync");
+  if (lastSync) {
+    document.getElementById("syncBadge").textContent = "Last synced " + lastSync;
   }
 });
 
@@ -687,7 +688,6 @@ function refreshDashboard() {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
 
-    localStorage.setItem("tat_cache_v2", JSON.stringify(DATA));
     var now = new Date().toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
     localStorage.setItem("tat_last_sync", now);
     document.getElementById("syncBadge").textContent = "Synced " + now;
