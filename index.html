@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>TAT Analytics — Era Botanics</title>
+<title>Last Mile Intelligence — Era Botanics</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
@@ -223,7 +223,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 <aside class="sb" id="sb">
   <div class="sb-top">
     <div class="sb-logo"><svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><rect x="2" y="3" width="6" height="6" rx="1"/><rect x="10" y="3" width="6" height="6" rx="1"/><rect x="2" y="13" width="6" height="6" rx="1"/><rect x="10" y="13" width="6" height="6" rx="1"/></svg></div>
-    <div class="sb-brand"><h2>TAT Analytics</h2><p>ERA BOTANICS OPS</p></div>
+    <div class="sb-brand"><h2>Last Mile Intelligence</h2><p>ERA BOTANICS OPS</p></div>
   </div>
   <nav class="sb-nav">
     <div class="sb-lbl">ANALYTICS</div>
@@ -821,17 +821,18 @@ function refreshDashboard() {
     if (s > 5) showToast("loading", "Loading data... (" + s + "s)", 0);
   }, 2000);
 
-    // month-level overall is always fetched for TAT/trend charts
-  // even when weekly granularity is selected
+    // Always fetch dimensional data at month granularity — this ensures
+  // all months have data regardless of the gran selector.
+  // Only overall is also fetched at the selected granularity for trend charts.
   var mParam = month !== "ALL" ? month : null;
   var fetchAll = [
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"overall",   months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"tier",       months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"warehouse",  months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"courier",    months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"city",       months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"state",      months:mParam }), 60000),
-    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"status",     months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"tier",       months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"warehouse",  months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"courier",    months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"city",       months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"state",      months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"status",     months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"overall",    months:mParam }), 60000),
   ];
 
