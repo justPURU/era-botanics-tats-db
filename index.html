@@ -552,15 +552,22 @@ document.addEventListener("DOMContentLoaded", function() {
   renderCfgRows();
   buildMonthChips();   // render month filter chips in fbar
 
-  // Clear any stale oversized cache from previous versions
+  // Clear old oversized cache keys
   try { localStorage.removeItem("tat_cache_v2"); } catch(e) {}
 
-  // No localStorage cache for DATA — BQ queries are fast enough (~3s)
-  // and cache exceeds 5MB quota with 8 months of data.
-  // Config + URL are still stored in localStorage (small, text-only).
-  var lastSync = localStorage.getItem("tat_last_sync");
-  if (lastSync) {
-    document.getElementById("syncBadge").textContent = "Last synced " + lastSync;
+  // Restore from smart cache (analytics_cache rows are small — ~25-50KB total)
+  try {
+    var cached = localStorage.getItem("tat_cache_v3");
+    if (cached) {
+      DATA = JSON.parse(cached);
+      syncMonthOrderFromData();
+      renderAll();
+      var lastSync = localStorage.getItem("tat_last_sync") || "";
+      document.getElementById("syncBadge").textContent = "Synced " + lastSync;
+      updateRangeBadge();
+    }
+  } catch(e) {
+    try { localStorage.removeItem("tat_cache_v3"); } catch(ignore) {}
   }
 });
 
@@ -844,6 +851,20 @@ function refreshDashboard() {
 
     syncMonthOrderFromData();  // sync MONTH_ORDER to actual BQ labels
     renderAll();
+
+    // Save to localStorage cache — analytics_cache rows are compact (~25-50KB)
+    // Use try/catch with size guard to avoid quota errors
+    try {
+      var serialised = JSON.stringify(DATA);
+      if (serialised.length < 3000000) {  // 3MB safety limit
+        localStorage.setItem("tat_cache_v3", serialised);
+      } else {
+        localStorage.removeItem("tat_cache_v3");
+      }
+    } catch(cacheErr) {
+      try { localStorage.removeItem("tat_cache_v3"); } catch(ignore) {}
+    }
+
     showToast("success", "Dashboard refreshed successfully", 4000);
 
   }).catch(function(e) {
