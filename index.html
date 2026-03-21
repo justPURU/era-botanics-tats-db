@@ -270,13 +270,10 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     </div>
   </div>
 
-  <!-- FILTER BAR — Month checkboxes -->
+  <!-- FILTER BAR — Month chips (click to toggle) -->
   <div class="fbar" id="monthFbar">
     <span class="flbl">Months:</span>
-    <label class="chip on" id="chip-ALL">
-      <input type="checkbox" checked style="display:none" id="chk-ALL" onchange="onMonthChk(this)"> All
-    </label>
-    <!-- Month chips rendered by JS from MONTH_ORDER -->
+    <button class="chip on" id="chip-ALL" onclick="onMonthChk('ALL')">All</button>
     <span id="monthChips"></span>
   </div>
 
@@ -581,53 +578,54 @@ function buildMonthChips() {
   var container = document.getElementById("monthChips");
   if (!container) return;
   container.innerHTML = MONTH_ORDER.map(function(m) {
-    var id = "chk-" + m.replace(/ /g,"_");
-    return "<label class=\"chip\" id=\"chip-" + m.replace(/ /g,"_") + "\">" +
-           "<input type=\"checkbox\" style=\"display:none\" id=\"" + id + "\" value=\"" + m + "\" onchange=\"onMonthChk(this)\">" +
-           shortMonth(m) + "</label>";
+    var safeId = "chip-" + m.replace(/ /g,"_");
+    return "<button class=\"chip\" id=\"" + safeId + "\" onclick=\"onMonthChk('" + m + "')\">" +
+           shortMonth(m) + "</button>";
   }).join("");
 }
 
-function onMonthChk(chk) {
-  if (chk.id === "chk-ALL") {
-    // ALL toggled — deselect individual months
-    if (chk.checked) {
-      selectedMonths = [];
-      MONTH_ORDER.forEach(function(m) {
-        var c = document.getElementById("chk-" + m.replace(/ /g,"_"));
-        if (c) { c.checked = false; c.parentElement.classList.remove("on"); }
-      });
-      document.getElementById("chip-ALL").classList.add("on");
-    }
-  } else {
-    // Individual month toggled
-    var allChk = document.getElementById("chk-ALL");
-    if (chk.checked) {
-      chk.parentElement.classList.add("on");
-      // Uncheck ALL when any individual month is selected
-      allChk.checked = false;
-      document.getElementById("chip-ALL").classList.remove("on");
-    } else {
-      chk.parentElement.classList.remove("on");
-    }
-    // Rebuild selectedMonths
+function onMonthChk(val) {
+  if (val === "ALL") {
+    // Select ALL — clear individual selection
     selectedMonths = [];
     MONTH_ORDER.forEach(function(m) {
-      var c = document.getElementById("chk-" + m.replace(/ /g,"_"));
-      if (c && c.checked) selectedMonths.push(m);
+      var el = document.getElementById("chip-" + m.replace(/ /g,"_"));
+      if (el) el.classList.remove("on");
     });
+    document.getElementById("chip-ALL").classList.add("on");
+  } else {
+    // Toggle individual month
+    var idx = selectedMonths.indexOf(val);
+    if (idx === -1) {
+      // Not selected → add it
+      selectedMonths.push(val);
+    } else {
+      // Already selected → remove it
+      selectedMonths.splice(idx, 1);
+    }
     // If nothing selected, revert to ALL
     if (selectedMonths.length === 0) {
-      allChk.checked = true;
+      selectedMonths = [];
       document.getElementById("chip-ALL").classList.add("on");
+      MONTH_ORDER.forEach(function(m) {
+        var el = document.getElementById("chip-" + m.replace(/ /g,"_"));
+        if (el) el.classList.remove("on");
+      });
+    } else {
+      // Deactivate ALL chip, activate selected chips
+      document.getElementById("chip-ALL").classList.remove("on");
+      MONTH_ORDER.forEach(function(m) {
+        var el = document.getElementById("chip-" + m.replace(/ /g,"_"));
+        if (el) {
+          if (selectedMonths.indexOf(m) !== -1) el.classList.add("on");
+          else el.classList.remove("on");
+        }
+      });
     }
   }
-  // Update range badge
   updateRangeBadge();
-  // Re-render dashboard with new filter
   if (Object.keys(DATA).length > 0) renderAll();
 }
-
 function updateRangeBadge() {
   var badge = document.getElementById("rangeBadge");
   if (!badge) return;
