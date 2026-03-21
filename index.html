@@ -1161,25 +1161,65 @@ function uploadMonth() {
     monthLabel: month
   }), 600000) // 10 min for large sheets
   .then(function(res) {
-    clearInterval(ticker); bar.style.width = "100%";
+    clearInterval(ticker);
     if (res.error) {
+      bar.style.width = "0%";
       st.className = "up-status show err";
       st.textContent = "Error: " + res.error;
-    } else {
-      st.className = "up-status show ok";
-      st.innerHTML = "Upload complete for <strong>" + res.monthLabel + "</strong><br/>" +
-        "Rows processed: " + fmtN(res.rowsProcessed) + " | Skipped: " + res.rowsSkipped +
-        " | Cache rows: " + res.cacheRows + " | Time: " + res.timeSecs + "s";
-      showToast("success", res.monthLabel + " uploaded — " + fmtN(res.rowsProcessed) + " rows", 6000);
+      showToast("error", "Upload failed: " + res.error, 0);
+      btn.disabled = false; btn.textContent = "📤 Upload to BigQuery";
+      setTimeout(function(){ prog.style.display = "none"; }, 2000);
+      return;
     }
+
+    // Raw insert done — now rebuild analytics cache as a separate call
+    st.className = "up-status show run";
+    st.textContent = "Rows inserted (" + fmtN(res.rowsProcessed) + "). Rebuilding analytics cache...";
+    bar.style.width = "70%";
+    showToast("loading", "Rebuilding analytics cache for " + res.monthLabel + "...", 0);
+
+    var cacheStart = Date.now();
+    var cacheTicker = setInterval(function() {
+      var s = Math.floor((Date.now() - cacheStart) / 1000);
+      st.textContent = "Rebuilding analytics cache... (" + s + "s)";
+    }, 2000);
+
+    apiFetch(buildUrl(GAS_URL, {
+      action: "rebuildCache",
+      monthLabel: month
+    }), 600000)
+    .then(function(cacheRes) {
+      clearInterval(cacheTicker);
+      bar.style.width = "100%";
+      if (cacheRes.error) {
+        st.className = "up-status show err";
+        st.textContent = "Rows uploaded but cache failed: " + cacheRes.error;
+        showToast("error", "Cache rebuild failed — raw data is fine", 0);
+      } else {
+        st.className = "up-status show ok";
+        st.innerHTML = "Complete: <strong>" + res.monthLabel + "</strong> — " +
+          fmtN(res.rowsProcessed) + " rows | Cache: " + cacheRes.cacheRows + " rows | " +
+          "Total: " + (res.timeSecs + cacheRes.timeSecs) + "s";
+        showToast("success", res.monthLabel + " fully uploaded and cached", 6000);
+      }
+    })
+    .catch(function(e) {
+      clearInterval(cacheTicker);
+      bar.style.width = "90%";
+      st.className = "up-status show err";
+      st.textContent = "Rows uploaded OK but cache rebuild timed out. Try: Config > Rebuild Cache for " + res.monthLabel;
+      showToast("error", "Cache timeout — raw data is in BQ. Re-upload to rebuild cache.", 0);
+    })
+    .finally(function() {
+      btn.disabled = false; btn.textContent = "📤 Upload to BigQuery";
+      setTimeout(function(){ prog.style.display = "none"; }, 3000);
+    });
   })
   .catch(function(e) {
     clearInterval(ticker); bar.style.width = "0%";
     st.className = "up-status show err";
     st.textContent = "Error: " + e.message;
-    showToast("error","Upload failed: " + e.message, 0);
-  })
-  .finally(function() {
+    showToast("error", "Upload failed: " + e.message, 0);
     btn.disabled = false; btn.textContent = "📤 Upload to BigQuery";
     setTimeout(function(){ prog.style.display = "none"; }, 2000);
   });
@@ -1217,7 +1257,7 @@ function uploadHolidays() {
 
     apiFetch(buildUrl(GAS_URL, {
       action: "uploadHolidays",
-      csvData: encodeURIComponent(JSON.stringify(rows))
+      csvData: JSON.stringify(rows)
     }), 60000)
     .then(function(res) {
       if (res.error) {
