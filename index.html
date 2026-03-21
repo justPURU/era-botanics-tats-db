@@ -988,7 +988,7 @@ function mkChart(id, type, data, opts) {
 }
 
 // Canonical month order — used for all charts and filters
-var MONTH_ORDER = ["Aug 2025","Sep 2025","Oct 2025","Nov 2025","Dec 2025","Jan 2026","Feb 2026","Mar 2026"];
+var MONTH_ORDER = ["Aug25","Sep25","Oct25","Nov25","Dec25","Jan26","Feb26","Mar26"];
 
 function sortByMonthLabel(rows) {
   return rows.slice().sort(function(a,b){
@@ -1002,13 +1002,13 @@ function sortByMonthLabel(rows) {
   });
 }
 
-// Short display labels for charts (e.g. "Aug 2025" → "Aug25")
+// Short display labels — labels are already short ("Aug25")
+// Also handles long format "Aug 2025" → "Aug25" just in case
 function shortMonth(label) {
   if (!label) return label;
-  // "Aug 2025" → "Aug25"
   var parts = label.split(" ");
   if (parts.length === 2) return parts[0] + parts[1].slice(2);
-  return label;
+  return label;  // already short
 }
 
 function renderVolTrend(rows) {
