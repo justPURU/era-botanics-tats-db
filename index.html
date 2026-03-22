@@ -326,8 +326,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
       <!-- 4. Trend charts at bottom -->
       <div class="g2">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">Monthly</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">All orders · monthly</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div><div class="card-sub">All orders · monthly</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
+      </div>
+      <div class="g2" style="margin-top:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — Avg TAT Trend</div><div class="card-sub">Per city · monthly</div></div></div><div class="ch-wrap"><canvas id="t1TatTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — SLA Breach % Trend</div><div class="card-sub">Per city · monthly</div></div></div><div class="ch-wrap"><canvas id="t1BreachTrendChart" height="210"></canvas></div></div>
       </div>
     </div>
 
@@ -930,6 +934,8 @@ function renderAll() {
     renderTATTable(overallMonth);
     renderTATTrend(overallMonth);
     renderBreachTrend(overallMonth);
+    renderT1TatTrend(tier1CityRows);
+    renderT1BreachTrend(tier1CityRows);
   });
   deferChart("trends", function() {
     renderWeeklyCharts(overall);
@@ -1241,10 +1247,10 @@ function renderTier1CityTable(rows) {
     return;
   }
 
-  // Pivot: city × month
+  // Pivot: city × month — descending (newest first)
   var months = MONTH_ORDER.filter(function(m) {
     return cityRows.some(function(r) { return r.month_label === m; });
-  });
+  }).slice().reverse();
 
   var cities = {};
   cityRows.forEach(function(r) {
@@ -1337,6 +1343,66 @@ function renderTier1BucketTable(rows) {
   });
 
   container.innerHTML = tblHTML(headers, rowData);
+}
+
+var T1_COLORS = [["#2563EB", "rgba(37,99,235,.12)"], ["#7C3AED", "rgba(124,58,237,.12)"], ["#059669", "rgba(5,150,105,.12)"], ["#D97706", "rgba(217,119,6,.12)"], ["#EF4444", "rgba(239,68,68,.12)"], ["#0891B2", "rgba(8,145,178,.12)"], ["#BE185D", "rgba(190,24,93,.12)"], ["#65A30D", "rgba(101,163,13,.12)"]];
+
+// ── Tier 1 Avg TAT Trend (multi-line, one line per city) ─────
+function renderT1TatTrend(rows) {
+  if (!rows || !rows.length) return;
+  var months = sortByMonthLabel(
+    rows.reduce(function(acc, r) {
+      if (!acc.some(function(x){ return x.month_label === r.month_label; })) acc.push(r);
+      return acc;
+    }, [])
+  );
+  var labels = months.map(function(r) { return shortMonth(r.month_label); });
+
+  var datasets = TIER1_CITIES.map(function(city, ci) {
+    var color = T1_COLORS[ci] || ["#6B7280","rgba(107,114,128,.1)"];
+    var cityMonthMap = {};
+    rows.filter(function(r){ return r.dimension_value === city; })
+        .forEach(function(r){ cityMonthMap[r.month_label] = r.avg_delivery_tat; });
+    return {
+      label: city,
+      data:  months.map(function(r){ return cityMonthMap[r.month_label] != null ? cityMonthMap[r.month_label] : null; }),
+      borderColor: color[0], backgroundColor: color[1],
+      borderWidth: 2, pointRadius: 3, tension: 0.3, fill: false, spanGaps: true
+    };
+  }).filter(function(ds){ return ds.data.some(function(v){ return v != null; }); });
+
+  mkChart("t1TatTrendChart", "line", { labels: labels, datasets: datasets },
+    { plugins:{ legend:{ position:"right", labels:{ font:{ family:"IBM Plex Mono", size:10 }, boxWidth:9, padding:8 }}},
+      scales:{ x: xA(""), y:{ ...yA("Days"), beginAtZero: true }}});
+}
+
+// ── Tier 1 SLA Breach % Trend (multi-line, one line per city) ─
+function renderT1BreachTrend(rows) {
+  if (!rows || !rows.length) return;
+  var months = sortByMonthLabel(
+    rows.reduce(function(acc, r) {
+      if (!acc.some(function(x){ return x.month_label === r.month_label; })) acc.push(r);
+      return acc;
+    }, [])
+  );
+  var labels = months.map(function(r) { return shortMonth(r.month_label); });
+
+  var datasets = TIER1_CITIES.map(function(city, ci) {
+    var color = T1_COLORS[ci] || ["#6B7280","rgba(107,114,128,.1)"];
+    var cityMonthMap = {};
+    rows.filter(function(r){ return r.dimension_value === city; })
+        .forEach(function(r){ cityMonthMap[r.month_label] = r.pct_breach; });
+    return {
+      label: city,
+      data:  months.map(function(r){ return cityMonthMap[r.month_label] != null ? cityMonthMap[r.month_label] : null; }),
+      borderColor: color[0], backgroundColor: color[1],
+      borderWidth: 2, pointRadius: 3, tension: 0.3, fill: false, spanGaps: true
+    };
+  }).filter(function(ds){ return ds.data.some(function(v){ return v != null; }); });
+
+  mkChart("t1BreachTrendChart", "line", { labels: labels, datasets: datasets },
+    { plugins:{ legend:{ position:"right", labels:{ font:{ family:"IBM Plex Mono", size:10 }, boxWidth:9, padding:8 }}},
+      scales:{ x: xA(""), y:{ ...yA("%"), beginAtZero: true, max: 100 }}});
 }
 
 function renderTierSection(rows) {
