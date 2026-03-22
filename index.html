@@ -560,8 +560,11 @@ document.addEventListener("DOMContentLoaded", function() {
     var cached = localStorage.getItem("tat_cache_v3");
     if (cached) {
       DATA = JSON.parse(cached);
-      // Ensure overall_month alias exists
-      if (!DATA.overall_month && DATA.overall) DATA.overall_month = DATA.overall;
+      if (!DATA.overall_month) DATA.overall_month = DATA.overall || [];
+      if (!DATA.overall_gran)  DATA.overall_gran  = DATA.overall || [];
+      if (!DATA.tier1city)     DATA.tier1city     = [];
+      if (!DATA.city)          DATA.city          = [];
+      if (!DATA.state)         DATA.state         = [];
       syncMonthOrderFromData();
       buildMonthChips();
       renderAll();
@@ -847,7 +850,7 @@ function refreshDashboard() {
     results.forEach(function(res, i) {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
-    // overall = month-level (for scorecards); overall_gran = selected gran (for trends)
+    // overall is always month-level; overall_gran has selected granularity for trends
     DATA.overall_month = DATA.overall;
 
     var now = new Date().toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
@@ -860,19 +863,19 @@ function refreshDashboard() {
     // Save to localStorage cache — analytics_cache rows are compact (~25-50KB)
     // Use try/catch with size guard to avoid quota errors
     try {
-      var serialised = JSON.stringify(DATA);
-      if (serialised.length < 4500000) {
-        localStorage.setItem("tat_cache_v3", serialised);
-      } else {
-        // Slim fallback — cache core keys only to stay under quota
-        var slim = {
-          overall: DATA.overall, overall_month: DATA.overall_month,
-          tier: DATA.tier, status: DATA.status, warehouse: DATA.warehouse
-        };
-        var slimStr = JSON.stringify(slim);
-        if (slimStr.length < 4500000) localStorage.setItem("tat_cache_v3", slimStr);
-        else localStorage.removeItem("tat_cache_v3");
-      }
+      // Always save a fixed set of keys — skip city/state which are large.
+      // city/state sections reload on next manual Refresh.
+      var toCache = {
+        overall:       DATA.overall       || [],
+        overall_month: DATA.overall_month || [],
+        overall_gran:  DATA.overall_gran  || [],
+        tier:          DATA.tier          || [],
+        tier1city:     DATA.tier1city     || [],
+        warehouse:     DATA.warehouse     || [],
+        courier:       DATA.courier       || [],
+        status:        DATA.status        || []
+      };
+      localStorage.setItem("tat_cache_v3", JSON.stringify(toCache));
     } catch(cacheErr) {
       try { localStorage.removeItem("tat_cache_v3"); } catch(ignore) {}
     }
