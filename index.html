@@ -313,14 +313,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
             <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted)">City:</span>
             <button class="chip on" id="t1city-ALL" onclick="setT1City('ALL')">All</button>
-            <button class="chip" id="t1city-Ahmedabad"        onclick="setT1City('Ahmedabad')">Ahmedabad</button>
             <button class="chip" id="t1city-Bangalore"         onclick="setT1City('Bangalore')">Bangalore</button>
-            <button class="chip" id="t1city-Chennai"           onclick="setT1City('Chennai')">Chennai</button>
             <button class="chip" id="t1city-Delhi"             onclick="setT1City('Delhi/NCR')">Delhi/NCR</button>
-            <button class="chip" id="t1city-Hyd"               onclick="setT1City('Hyd and Telangana')">Hyd &amp; Telangana</button>
-            <button class="chip" id="t1city-Kolkata"           onclick="setT1City('Kolkata')">Kolkata</button>
             <button class="chip" id="t1city-Mumbai"            onclick="setT1City('Mumbai')">Mumbai</button>
+            <button class="chip" id="t1city-Hyd"               onclick="setT1City('Hyd and Telangana')">Hyd &amp; Telangana</button>
+            <button class="chip" id="t1city-Chennai"           onclick="setT1City('Chennai')">Chennai</button>
             <button class="chip" id="t1city-Pune"              onclick="setT1City('Pune')">Pune</button>
+            <button class="chip" id="t1city-Kolkata"           onclick="setT1City('Kolkata')">Kolkata</button>
+            <button class="chip" id="t1city-Ahmedabad"        onclick="setT1City('Ahmedabad')">Ahmedabad</button>
           </div>
           <div class="tbl-wrap" id="tier1CityTable"></div>
         </div>
@@ -1192,7 +1192,7 @@ function renderTATTable(rows) {
 
 // ── Tier 1 City TAT Table ────────────────────────────────────
 var activeT1City = "ALL";
-var TIER1_CITIES = ["Ahmedabad","Bangalore","Chennai","Delhi/NCR","Hyd and Telangana","Kolkata","Mumbai","Pune"];
+var TIER1_CITIES = ["Bangalore","Delhi/NCR","Mumbai","Hyd and Telangana","Chennai","Pune","Kolkata","Ahmedabad"];
 
 function setT1City(city) {
   activeT1City = city;
