@@ -313,14 +313,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
           <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
             <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted)">City:</span>
             <button class="chip on" id="t1city-ALL" onclick="setT1City('ALL')">All</button>
-            <button class="chip" id="t1city-Bangalore"  onclick="setT1City('Bangalore')">Bangalore</button>
-            <button class="chip" id="t1city-Delhi"      onclick="setT1City('Delhi/NCR')">Delhi/NCR</button>
-            <button class="chip" id="t1city-Mumbai"     onclick="setT1City('Mumbai')">Mumbai</button>
-            <button class="chip" id="t1city-Hyderabad"  onclick="setT1City('Hyderabad')">Hyderabad</button>
-            <button class="chip" id="t1city-Chennai"    onclick="setT1City('Chennai')">Chennai</button>
-            <button class="chip" id="t1city-Pune"       onclick="setT1City('Pune')">Pune</button>
-            <button class="chip" id="t1city-Kolkata"    onclick="setT1City('Kolkata')">Kolkata</button>
-            <button class="chip" id="t1city-Ahmedabad"  onclick="setT1City('Ahmedabad')">Ahmedabad</button>
+            <button class="chip" id="t1city-Ahmedabad"        onclick="setT1City('Ahmedabad')">Ahmedabad</button>
+            <button class="chip" id="t1city-Bangalore"         onclick="setT1City('Bangalore')">Bangalore</button>
+            <button class="chip" id="t1city-Chennai"           onclick="setT1City('Chennai')">Chennai</button>
+            <button class="chip" id="t1city-Delhi"             onclick="setT1City('Delhi/NCR')">Delhi/NCR</button>
+            <button class="chip" id="t1city-Hyd"               onclick="setT1City('Hyd and Telangana')">Hyd &amp; Telangana</button>
+            <button class="chip" id="t1city-Kolkata"           onclick="setT1City('Kolkata')">Kolkata</button>
+            <button class="chip" id="t1city-Mumbai"            onclick="setT1City('Mumbai')">Mumbai</button>
+            <button class="chip" id="t1city-Pune"              onclick="setT1City('Pune')">Pune</button>
           </div>
           <div class="tbl-wrap" id="tier1CityTable"></div>
         </div>
@@ -560,7 +560,10 @@ document.addEventListener("DOMContentLoaded", function() {
     var cached = localStorage.getItem("tat_cache_v3");
     if (cached) {
       DATA = JSON.parse(cached);
+      // Ensure overall_month alias exists
+      if (!DATA.overall_month && DATA.overall) DATA.overall_month = DATA.overall;
       syncMonthOrderFromData();
+      buildMonthChips();
       renderAll();
       var lastSync = localStorage.getItem("tat_last_sync") || "";
       document.getElementById("syncBadge").textContent = "Synced " + lastSync;
@@ -839,12 +842,12 @@ function refreshDashboard() {
   Promise.all(fetchAll).then(function(results) {
     clearInterval(counter);
     DATA = {};
-    var keys = ["overall","tier","warehouse","courier","city","state","status","overall_month"];
+    var keys = ["overall","tier","warehouse","courier","city","state","status","overall_gran"];
     results.forEach(function(res, i) {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
-    // overall_month is always month-granularity regardless of gran selector
-    if (!DATA.overall_month) DATA.overall_month = DATA.overall;
+    // overall = month-level (for scorecards); overall_gran = selected gran (for trends)
+    DATA.overall_month = DATA.overall;
 
     var now = new Date().toLocaleString("en-IN",{day:"numeric",month:"short",hour:"2-digit",minute:"2-digit"});
     localStorage.setItem("tat_last_sync", now);
@@ -857,10 +860,17 @@ function refreshDashboard() {
     // Use try/catch with size guard to avoid quota errors
     try {
       var serialised = JSON.stringify(DATA);
-      if (serialised.length < 3000000) {  // 3MB safety limit
+      if (serialised.length < 4500000) {
         localStorage.setItem("tat_cache_v3", serialised);
       } else {
-        localStorage.removeItem("tat_cache_v3");
+        // Slim fallback — cache core keys only to stay under quota
+        var slim = {
+          overall: DATA.overall, overall_month: DATA.overall_month,
+          tier: DATA.tier, status: DATA.status, warehouse: DATA.warehouse
+        };
+        var slimStr = JSON.stringify(slim);
+        if (slimStr.length < 4500000) localStorage.setItem("tat_cache_v3", slimStr);
+        else localStorage.removeItem("tat_cache_v3");
       }
     } catch(cacheErr) {
       try { localStorage.removeItem("tat_cache_v3"); } catch(ignore) {}
@@ -1178,7 +1188,7 @@ function renderTATTable(rows) {
 
 // ── Tier 1 City TAT Table ────────────────────────────────────
 var activeT1City = "ALL";
-var TIER1_CITIES = ["Bangalore","Delhi/NCR","Mumbai","Hyderabad","Chennai","Pune","Kolkata","Ahmedabad"];
+var TIER1_CITIES = ["Ahmedabad","Bangalore","Chennai","Delhi/NCR","Hyd and Telangana","Kolkata","Mumbai","Pune"];
 
 function setT1City(city) {
   activeT1City = city;
@@ -1186,7 +1196,12 @@ function setT1City(city) {
   document.querySelectorAll("[id^='t1city-']").forEach(function(el){
     el.classList.remove("on");
   });
-  var safeId = "t1city-" + (city === "Delhi/NCR" ? "Delhi" : city === "ALL" ? "ALL" : city);
+  var safeId = "t1city-" + (
+    city === "ALL"                ? "ALL" :
+    city === "Delhi/NCR"          ? "Delhi" :
+    city === "Hyd and Telangana"  ? "Hyd" :
+    city
+  );
   var el = document.getElementById(safeId);
   if (el) el.classList.add("on");
   // Re-render table
