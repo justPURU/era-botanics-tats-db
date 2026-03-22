@@ -298,32 +298,36 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     <!-- TAT DEEP DIVE -->
     <div class="sec" id="sec-tat">
       <div class="sec-hd"><h2>TAT Deep Dive</h2><p>Delivery TAT trends, bucket analysis, breach tracking</p></div>
-      <div class="g2">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">Monthly + weekly</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
-      </div>
-      <div style="margin-top:14px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
-      </div>
-      <div style="margin-top:14px">
+
+      <!-- 1. Tier 1 City Monthly TAT Performance (top, no month filter) -->
+      <div style="margin-bottom:14px">
         <div class="card">
           <div class="card-hd">
-            <div><div class="card-ttl">Tier 1 City — Monthly TAT Performance</div><div class="card-sub">Bangalore · Delhi/NCR · Mumbai · Hyderabad · Chennai · Pune · Kolkata · Ahmedabad</div></div>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:12px">
-            <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted)">City:</span>
-            <button class="chip on" id="t1city-ALL" onclick="setT1City('ALL')">All</button>
-            <button class="chip" id="t1city-Bangalore"         onclick="setT1City('Bangalore')">Bangalore</button>
-            <button class="chip" id="t1city-Delhi"             onclick="setT1City('Delhi/NCR')">Delhi/NCR</button>
-            <button class="chip" id="t1city-Mumbai"            onclick="setT1City('Mumbai')">Mumbai</button>
-            <button class="chip" id="t1city-Hyd"               onclick="setT1City('Hyd and Telangana')">Hyd &amp; Telangana</button>
-            <button class="chip" id="t1city-Chennai"           onclick="setT1City('Chennai')">Chennai</button>
-            <button class="chip" id="t1city-Pune"              onclick="setT1City('Pune')">Pune</button>
-            <button class="chip" id="t1city-Kolkata"           onclick="setT1City('Kolkata')">Kolkata</button>
-            <button class="chip" id="t1city-Ahmedabad"        onclick="setT1City('Ahmedabad')">Ahmedabad</button>
+            <div><div class="card-ttl">Tier 1 City — Monthly TAT Performance</div><div class="card-sub">Bangalore · Delhi/NCR · Mumbai · Hyd &amp; Telangana · Chennai · Pune · Kolkata · Ahmedabad</div></div>
           </div>
           <div class="tbl-wrap" id="tier1CityTable"></div>
         </div>
+      </div>
+
+      <!-- 2. Tier 1 City TAT Bucket Distribution -->
+      <div style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-hd">
+            <div><div class="card-ttl">Tier 1 City — TAT Bucket Distribution</div><div class="card-sub">% of delivered orders per TAT bucket across all selected months</div></div>
+          </div>
+          <div class="tbl-wrap" id="tier1BucketTable"></div>
+        </div>
+      </div>
+
+      <!-- 3. Monthly TAT Performance Table -->
+      <div style="margin-bottom:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
+      </div>
+
+      <!-- 4. Trend charts at bottom -->
+      <div class="g2">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">Monthly</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
       </div>
     </div>
 
@@ -921,10 +925,11 @@ function renderAll() {
   var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
   var tier1CityRows = filterByMonth(DATA.tier1city || []);
   deferChart("tat", function() {
+    renderTier1CityTable(tier1CityRows);
+    renderTier1BucketTable(tier1CityRows);
+    renderTATTable(overallMonth);
     renderTATTrend(overallMonth);
     renderBreachTrend(overallMonth);
-    renderTATTable(overallMonth);
-    renderTier1CityTable(tier1CityRows);
   });
   deferChart("trends", function() {
     renderWeeklyCharts(overall);
@@ -1268,6 +1273,67 @@ function renderTier1CityTable(rows) {
     var avgTAT    = allTATn    ? round2(allTAT    / allTATn)    : null;
     var avgBreach = allBreachn ? round2(allBreach / allBreachn) : null;
     return [city].concat(cells).concat([tatBdg(avgTAT), pctBdg(avgBreach, 30, false)]);
+  });
+
+  container.innerHTML = tblHTML(headers, rowData);
+}
+
+// ── Tier 1 City TAT Bucket Distribution ─────────────────────
+function renderTier1BucketTable(rows) {
+  var container = document.getElementById("tier1BucketTable");
+  if (!container) return;
+
+  if (!rows || !rows.length) {
+    container.innerHTML = "<div class='empty'><div class='ei'>📊</div><p>No data</p></div>";
+    return;
+  }
+
+  var buckets = [
+    { key: "tat_0_2",  label: "0–2 Days" },
+    { key: "tat_3_4",  label: "3–4 Days" },
+    { key: "tat_5_7",  label: "5–7 Days" },
+    { key: "tat_8_12", label: "8–12 Days" },
+    { key: "tat_gt12", label: ">12 Days" }
+  ];
+
+  // Aggregate across all selected months per city
+  var cityTotals = {};
+  rows.forEach(function(r) {
+    var city = r.dimension_value || "Unknown";
+    if (!cityTotals[city]) {
+      cityTotals[city] = { delivered: 0, tat_0_2: 0, tat_3_4: 0, tat_5_7: 0, tat_8_12: 0, tat_gt12: 0 };
+    }
+    cityTotals[city].delivered += n(r.delivered_orders);
+    cityTotals[city].tat_0_2  += n(r.tat_0_2);
+    cityTotals[city].tat_3_4  += n(r.tat_3_4);
+    cityTotals[city].tat_5_7  += n(r.tat_5_7);
+    cityTotals[city].tat_8_12 += n(r.tat_8_12);
+    cityTotals[city].tat_gt12 += n(r.tat_gt12);
+  });
+
+  // Sort cities in canonical order
+  var sortedCities = TIER1_CITIES.filter(function(c) { return cityTotals[c]; });
+  Object.keys(cityTotals).forEach(function(c) {
+    if (sortedCities.indexOf(c) === -1) sortedCities.push(c);
+  });
+
+  var headers = ["City", "Delivered"].concat(buckets.map(function(b) { return b.label; }));
+
+  var rowData = sortedCities.map(function(city) {
+    var d = cityTotals[city];
+    var total = d.delivered || 1; // avoid div by zero
+    var cells = buckets.map(function(b) {
+      var cnt = d[b.key] || 0;
+      var pct = round2(cnt / total * 100);
+      // Colour-coded badge: green for 0-2, amber for 5-7, red for 8+
+      var colour = b.key === "tat_0_2"  ? "var(--green)"  :
+                   b.key === "tat_3_4"  ? "var(--blue)"   :
+                   b.key === "tat_5_7"  ? "var(--amber)"  :
+                   b.key === "tat_8_12" ? "var(--red)"    : "#991B1B";
+      return "<span style='color:" + colour + ";font-weight:600'>" + pct + "%</span>" +
+             "<span style='color:var(--muted);font-size:.65rem;margin-left:3px'>(" + fmtN(cnt) + ")</span>";
+    });
+    return [city, fmtN(d.delivered)].concat(cells);
   });
 
   container.innerHTML = tblHTML(headers, rowData);
