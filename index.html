@@ -834,6 +834,7 @@ function refreshDashboard() {
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"warehouse",  months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"courier",    months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"city",       months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"tier1city",  months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"state",      months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"status",     months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"overall",    months:mParam }), 60000),
@@ -842,7 +843,7 @@ function refreshDashboard() {
   Promise.all(fetchAll).then(function(results) {
     clearInterval(counter);
     DATA = {};
-    var keys = ["overall","tier","warehouse","courier","city","state","status","overall_gran"];
+    var keys = ["overall","tier","warehouse","courier","city","tier1city","state","status","overall_gran"];
     results.forEach(function(res, i) {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
@@ -915,12 +916,12 @@ function renderAll() {
   renderWarehouseSection(whRows);
   renderCourierSection(courier);
   var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
-  var cityForTier1 = filterByMonth(DATA.city || []);
+  var tier1CityRows = filterByMonth(DATA.tier1city || []);
   deferChart("tat", function() {
     renderTATTrend(overallMonth);
     renderBreachTrend(overallMonth);
     renderTATTable(overallMonth);
-    renderTier1CityTable(cityForTier1);
+    renderTier1CityTable(tier1CityRows);
   });
   deferChart("trends", function() {
     renderWeeklyCharts(overall);
@@ -1212,57 +1213,58 @@ function setT1City(city) {
 function renderTier1CityTable(rows) {
   var container = document.getElementById("tier1CityTable");
   if (!container) return;
-  if (!rows.length) { container.innerHTML = "<div class='empty'><div class='ei'>🏙</div><p>No data</p></div>"; return; }
 
-  // Filter to Tier 1 cities only — match on tier_1_city or shipping_city
-  var t1Cities = TIER1_CITIES;
-  var cityRows = rows.filter(function(r) {
-    var city = (r.dimension_value || "").trim();
-    // Check if any T1 city name is contained (handles "Delhi" matching "Delhi/NCR")
-    return t1Cities.some(function(c){
-      return city.toLowerCase().indexOf(c.toLowerCase().replace("/ncr","").replace("delhi","delhi")) !== -1 ||
-             c.toLowerCase().indexOf(city.toLowerCase()) !== -1;
-    });
-  });
+  if (!rows || !rows.length) {
+    container.innerHTML = "<div class='empty'><div class='ei'>🏙</div><p>No data — run rebuildCache after uploading a month.</p></div>";
+    return;
+  }
 
-  // Filter by selected city
+  // rows come from tier1city dimension — dimension_value is exact tier_1_city name
+  // Filter by selected city chip
+  var cityRows = rows;
   if (activeT1City !== "ALL") {
-    cityRows = cityRows.filter(function(r) {
-      var city = (r.dimension_value || "").toLowerCase();
-      var sel  = activeT1City.toLowerCase().replace("/ncr","");
-      return city.indexOf(sel) !== -1 || sel.indexOf(city) !== -1;
+    cityRows = rows.filter(function(r) {
+      return (r.dimension_value || "") === activeT1City;
     });
   }
 
   if (!cityRows.length) {
-    container.innerHTML = "<div class='empty'><p>No Tier 1 city data found. Ensure the <strong>Tier 1 City</strong> column is populated in your sheet and re-uploaded.</p></div>";
+    container.innerHTML = "<div class='empty'><div class='ei'>🏙</div><p>No data for " + activeT1City + "</p></div>";
     return;
   }
 
-  // Pivot: city × month grid
-  var months  = MONTH_ORDER.filter(function(m){
-    return cityRows.some(function(r){ return r.month_label === m; });
+  // Pivot: city × month
+  var months = MONTH_ORDER.filter(function(m) {
+    return cityRows.some(function(r) { return r.month_label === m; });
   });
-  var cities  = {};
-  cityRows.forEach(function(r){
-    var city = r.dimension_value;
+
+  var cities = {};
+  cityRows.forEach(function(r) {
+    var city = r.dimension_value || "Unknown";
     if (!cities[city]) cities[city] = {};
     cities[city][r.month_label] = r;
   });
 
-  var headers = ["City"].concat(months).concat(["Avg TAT","Breach %"]);
-  var rowData  = Object.keys(cities).sort().map(function(city) {
+  // Sort cities in canonical order (same as TIER1_CITIES)
+  var sortedCities = TIER1_CITIES.filter(function(c) { return cities[c]; });
+  // Add any cities in data not in TIER1_CITIES list
+  Object.keys(cities).forEach(function(c) {
+    if (sortedCities.indexOf(c) === -1) sortedCities.push(c);
+  });
+
+  var headers = ["City"].concat(months.map(shortMonth)).concat(["Avg TAT", "Breach %"]);
+  var rowData = sortedCities.map(function(city) {
     var allTAT = 0, allTATn = 0, allBreach = 0, allBreachn = 0;
     var cells = months.map(function(m) {
       var r = cities[city][m];
       if (!r) return "--";
-      if (r.avg_delivery_tat !== null) { allTAT += r.avg_delivery_tat; allTATn++; }
-      if (r.pct_breach !== null)       { allBreach += r.pct_breach; allBreachn++; }
+      if (r.avg_delivery_tat != null) { allTAT += r.avg_delivery_tat; allTATn++; }
+      if (r.pct_breach != null)       { allBreach += r.pct_breach; allBreachn++; }
       return tatBdg(r.avg_delivery_tat);
     });
-    var avgTAT   = allTATn    ? round2(allTAT/allTATn)       : null;
-    var avgBreach= allBreachn ? round2(allBreach/allBreachn)  : null;
-    return [city].concat(cells).concat([tatBdg(avgTAT), pctBdg(avgBreach,30,false)]);
+    var avgTAT    = allTATn    ? round2(allTAT    / allTATn)    : null;
+    var avgBreach = allBreachn ? round2(allBreach / allBreachn) : null;
+    return [city].concat(cells).concat([tatBdg(avgTAT), pctBdg(avgBreach, 30, false)]);
   });
 
   container.innerHTML = tblHTML(headers, rowData);
