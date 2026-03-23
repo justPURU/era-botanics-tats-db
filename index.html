@@ -375,30 +375,25 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
     <!-- WAREHOUSE -->
     <div class="sec" id="sec-warehouse">
-      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup timeliness vs Ideal Pickup Date (A) · excludes rows where ideal_pickup_a is null</p></div>
+      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup timeliness vs Ideal Pickup Date (A) · rows with null ideal_pickup_a excluded from all metrics</p></div>
 
-      <!-- 1. Out TAT Heatmap — full width, last 30 days -->
+      <!-- 1. Warehouse Pickup Timeliness — Bucket Distribution -->
       <div style="margin-bottom:14px">
         <div class="card">
-          <div class="card-hd"><div><div class="card-ttl">Out TAT Heatmap — Day Level</div><div class="card-sub">% of orders in Ideal bucket per warehouse per day · last 30 days · newest left</div></div></div>
-          <div style="overflow-x:auto"><div id="whHeatmap" style="min-width:900px;padding:4px 0"></div></div>
-        </div>
-      </div>
-
-      <!-- 2. On-Time Pickup % bar chart -->
-      <div style="margin-bottom:14px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">On-Time Pickup % by Warehouse</div><div class="card-sub">% picked on or before ideal_pickup_a</div></div></div><div class="ch-wrap"><canvas id="whChart" height="220"></canvas></div></div>
-      </div>
-
-      <!-- 3. Warehouse Pickup Timeliness Bucket Distribution -->
-      <div style="margin-bottom:14px">
-        <div class="card">
-          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Pickup Date vs Ideal Pickup Date (A) · null ideal_pickup_a excluded</div></div></div>
+          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Pickup Date vs Ideal Pickup Date (A) · null ideal_pickup_a excluded · Out TAT % = non-Ideal orders / valid orders</div></div></div>
           <div class="tbl-wrap" id="whBucketTable"></div>
         </div>
       </div>
 
-      <!-- 4. Warehouse Split — Tier 1 Cities -->
+      <!-- 2. Out TAT Heatmap — full width, always last 30 days (ignores month filter) -->
+      <div style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-ttl">Out TAT Heatmap — Day Level</div><div class="card-sub">Out TAT % per warehouse per day · last 30 days rolling · newest left · independent of month filter</div></div></div>
+          <div style="overflow-x:auto"><div id="whHeatmap" style="min-width:900px;padding:4px 0"></div></div>
+        </div>
+      </div>
+
+      <!-- 3. Warehouse Split — Tier 1 Cities -->
       <div style="margin-bottom:14px">
         <div class="card">
           <div class="card-hd"><div><div class="card-ttl">Warehouse Split — Tier 1 Cities</div><div class="card-sub">% of orders dispatched from each warehouse to each Tier 1 city</div></div></div>
@@ -406,7 +401,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
         </div>
       </div>
 
-      <!-- 5. Warehouse Detail Table -->
+      <!-- 4. Warehouse Detail Table -->
       <div style="margin-bottom:14px">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Warehouse Detail Table</div></div></div><div class="tbl-wrap" id="whTable"></div></div>
       </div>
@@ -1059,12 +1054,14 @@ function renderAll() {
   });
   renderTierSection(tierRows);
   renderGeoSection(city, state);
-  var whDayRows   = filterByMonth(DATA.whday   || []);
+  // whDayRows: NOT filtered by month — heatmap always shows last 30 days rolling
+  var whDayRows   = DATA.whday   || [];
   var whSplitRows = filterByMonth(DATA.whsplit || []);
-  renderWhHeatmap(whDayRows);
-  renderWarehouseSection(whRows);
+  // Render in layout order: bucket → heatmap → split → detail
   renderWhBucketTable(whRows);
+  renderWhHeatmap(whDayRows);
   renderWhSplitTable(whSplitRows);
+  renderWarehouseSection(whRows);
   renderCourierSection(courier);
   var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
   var tier1CityRows = filterByMonth(DATA.tier1city || []);
@@ -1824,9 +1821,11 @@ function renderWhHeatmap(dayRows) {
   var rows_html = whs.map(function(wh) {
     var cells = dates.map(function(d) {
       var cell = matrix[wh][d];
-      var pct  = cell.total > 0 ? round2(cell.ideal / cell.total * 100) : null;
-      var disp = pct !== null ? pct + "%" : "—";
-      return "<td style='" + CELL + heatColor(pct) + "'>" + disp + "</td>";
+      // Out TAT % = non-Ideal orders / total valid orders
+      // Higher Out TAT % = worse performance = darker red
+      var outTat = cell.total > 0 ? round2((cell.total - cell.ideal) / cell.total * 100) : null;
+      var disp   = outTat !== null ? outTat + "%" : "—";
+      return "<td style='" + CELL + heatColor(outTat) + "'>" + disp + "</td>";
     }).join("");
     return "<tr><td style='" + WH_W + "'>" + wh + "</td>" + cells + "</tr>";
   }).join("");
@@ -1834,7 +1833,7 @@ function renderWhHeatmap(dayRows) {
   var header = "<tr><th style='" + WH_W + "font-size:.6rem;background:var(--bg2);border:1px solid var(--border)'>Warehouse</th>" +
     dates.map(function(d){ return "<th style='" + HDR + "'>" + fmtD(d) + "</th>"; }).join("") + "</tr>";
 
-  container.innerHTML = "<div style='font-size:.65rem;color:var(--muted);margin-bottom:6px'>Ideal bucket = Pickup Date = Ideal Pickup Date (A) · darker red = higher % picked late</div>" +
+  container.innerHTML = "<div style='font-size:.65rem;color:var(--muted);margin-bottom:6px'>Out TAT % = orders NOT picked on ideal date / total valid orders · darker red = worse performance · null ideal_pickup_a excluded</div>" +
     "<table style='border-collapse:collapse;width:100%'>" + header + rows_html + "</table>";
 }
 
@@ -1905,24 +1904,52 @@ function renderWarehouseSection(rows) {
   var agg = {};
   rows.forEach(function(r){
     var k = r.dimension_value;
-    if (!agg[k]) agg[k]={total:0,wTatS:0,wTatN:0,onTimeS:0,onTimeN:0,avgTatS:0,avgTatN:0};
-    agg[k].total    += n(r.total_orders);
-    if (r.avg_warehouse_tat  !== null){agg[k].wTatS   += r.avg_warehouse_tat  * n(r.total_orders); agg[k].wTatN   += n(r.total_orders);}
-    if (r.pct_ontime_pickup  !== null){agg[k].onTimeS += r.pct_ontime_pickup  * n(r.total_orders); agg[k].onTimeN += n(r.total_orders);}
-    if (r.avg_delivery_tat   !== null){agg[k].avgTatS += r.avg_delivery_tat   * n(r.delivered_orders||r.total_orders); agg[k].avgTatN += n(r.delivered_orders||r.total_orders);}
+    if (!agg[k]) agg[k]={
+      total:0, wTatS:0, wTatN:0, onTimeS:0, onTimeN:0,
+      avgTatS:0, avgTatN:0,
+      // bucket counts for Out TAT %
+      wh_ideal:0, wh_plus1:0, wh_plus2:0, wh_plus3:0, wh_plus4plus:0
+    };
+    var d = agg[k];
+    d.total        += n(r.total_orders);
+    d.wh_ideal     += n(r.wh_ideal);
+    d.wh_plus1     += n(r.wh_plus1);
+    d.wh_plus2     += n(r.wh_plus2);
+    d.wh_plus3     += n(r.wh_plus3);
+    d.wh_plus4plus += n(r.wh_plus4plus);
+    if (r.avg_warehouse_tat !== null){ d.wTatS  += r.avg_warehouse_tat * n(r.total_orders); d.wTatN  += n(r.total_orders); }
+    if (r.pct_ontime_pickup !== null){ d.onTimeS += r.pct_ontime_pickup * n(r.total_orders); d.onTimeN += n(r.total_orders); }
+    if (r.avg_delivery_tat  !== null){ d.avgTatS += r.avg_delivery_tat * n(r.delivered_orders||r.total_orders); d.avgTatN += n(r.delivered_orders||r.total_orders); }
   });
-  var whs = Object.keys(agg).sort(function(a,b){return agg[b].total-agg[a].total;});
+  var whs = Object.keys(agg).sort(function(a,b){ return agg[b].total - agg[a].total; });
 
   deferChart("warehouse", function() {
-    mkChart("whChart","bar",{labels:whs,datasets:[{label:"On-Time %",data:whs.map(function(w){var d=agg[w];return d.onTimeN?round2(d.onTimeS/d.onTimeN):null;}),backgroundColor:whs.map(function(w){return(agg[w].onTimeN&&round2(agg[w].onTimeS/agg[w].onTimeN)>=80)?"rgba(5,150,105,.15)":"rgba(239,68,68,.12)";}),borderColor:whs.map(function(w){return(agg[w].onTimeN&&round2(agg[w].onTimeS/agg[w].onTimeN)>=80)?"#059669":"#EF4444";}),borderWidth:1.5,borderRadius:5}]},{plugins:{legend:{display:false}},scales:{x:xA(""),y:{...yA("%"),max:100,beginAtZero:true}}});
+    mkChart("whChart","bar",{labels:whs,datasets:[{label:"On-Time %",
+      data:whs.map(function(w){var d=agg[w];return d.onTimeN?round2(d.onTimeS/d.onTimeN):null;}),
+      backgroundColor:whs.map(function(w){return(agg[w].onTimeN&&round2(agg[w].onTimeS/agg[w].onTimeN)>=80)?"rgba(5,150,105,.15)":"rgba(239,68,68,.12)";}),
+      borderColor:whs.map(function(w){return(agg[w].onTimeN&&round2(agg[w].onTimeS/agg[w].onTimeN)>=80)?"#059669":"#EF4444";}),
+      borderWidth:1.5,borderRadius:5}]},
+      {plugins:{legend:{display:false}},scales:{x:xA(""),y:{...yA("%"),max:100,beginAtZero:true}}});
   });
 
   document.getElementById("whTable").innerHTML = tblHTML(
-    ["Warehouse","Volume","Avg Pickup Delay","On-Time %","Avg Delivery TAT"],
-    whs.map(function(w){var d=agg[w];
-      var delay=d.wTatN?round2(d.wTatS/d.wTatN):null;
-      var onTime=d.onTimeN?round2(d.onTimeS/d.onTimeN):null;
-      return[w,fmtN(d.total),delay!=null?(delay<=0?"<span class='b bg'>On Time</span>":"<span class='b ba'>+"+delay+"d</span>"):"--",pctBdg(onTime,80,true),tatBdg(d.avgTatN?round2(d.avgTatS/d.avgTatN):null)];
+    ["Warehouse","Volume","Avg Pickup Delay","On-Time %","Avg Out TAT %","Avg Delivery TAT"],
+    whs.map(function(w){ var d = agg[w];
+      var delay    = d.wTatN    ? round2(d.wTatS / d.wTatN)    : null;
+      var onTime   = d.onTimeN  ? round2(d.onTimeS / d.onTimeN) : null;
+      var validPU  = d.wh_ideal + d.wh_plus1 + d.wh_plus2 + d.wh_plus3 + d.wh_plus4plus;
+      // Out TAT % = non-Ideal / valid (same logic as heatmap and bucket table)
+      var outTat   = validPU > 0
+        ? round2((d.wh_plus1 + d.wh_plus2 + d.wh_plus3 + d.wh_plus4plus) / validPU * 100)
+        : null;
+      return [
+        w,
+        fmtN(d.total),
+        delay != null ? (delay <= 0 ? "<span class='b bg'>On Time</span>" : "<span class='b ba'>+" + delay + "d</span>") : "--",
+        pctBdg(onTime, 80, true),
+        outTat != null ? pctBdg(100 - outTat, 80, true) + " <span style='color:var(--muted);font-size:.62rem'>(" + outTat + "% out)</span>" : "--",
+        tatBdg(d.avgTatN ? round2(d.avgTatS / d.avgTatN) : null)
+      ];
     })
   );
 }
