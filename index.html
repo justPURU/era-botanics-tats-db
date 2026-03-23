@@ -375,19 +375,39 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
     <!-- WAREHOUSE -->
     <div class="sec" id="sec-warehouse">
-      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup timeliness vs ideal pickup date (A)</p></div>
-      <!-- Warehouse pickup bucket table — main chart -->
+      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup timeliness vs Ideal Pickup Date (A) · excludes rows where ideal_pickup_a is null</p></div>
+
+      <!-- 1. Out TAT Heatmap — full width, last 30 days -->
       <div style="margin-bottom:14px">
         <div class="card">
-          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Based on diff between Pickup Date and Ideal Pickup Date (A)</div></div></div>
+          <div class="card-hd"><div><div class="card-ttl">Out TAT Heatmap — Day Level</div><div class="card-sub">% of orders in Ideal bucket per warehouse per day · last 30 days · newest left</div></div></div>
+          <div style="overflow-x:auto"><div id="whHeatmap" style="min-width:900px;padding:4px 0"></div></div>
+        </div>
+      </div>
+
+      <!-- 2. On-Time Pickup % bar chart -->
+      <div style="margin-bottom:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">On-Time Pickup % by Warehouse</div><div class="card-sub">% picked on or before ideal_pickup_a</div></div></div><div class="ch-wrap"><canvas id="whChart" height="220"></canvas></div></div>
+      </div>
+
+      <!-- 3. Warehouse Pickup Timeliness Bucket Distribution -->
+      <div style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Pickup Date vs Ideal Pickup Date (A) · null ideal_pickup_a excluded</div></div></div>
           <div class="tbl-wrap" id="whBucketTable"></div>
         </div>
       </div>
-      <div class="g2">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Pickup Delay Distribution</div></div></div><div id="pickupBars"></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">On-Time Pickup % by Warehouse</div></div></div><div class="ch-wrap"><canvas id="whChart" height="220"></canvas></div></div>
+
+      <!-- 4. Warehouse Split — Tier 1 Cities -->
+      <div style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-ttl">Warehouse Split — Tier 1 Cities</div><div class="card-sub">% of orders dispatched from each warehouse to each Tier 1 city</div></div></div>
+          <div class="tbl-wrap" id="whSplitTable"></div>
+        </div>
       </div>
-      <div style="margin-top:14px">
+
+      <!-- 5. Warehouse Detail Table -->
+      <div style="margin-bottom:14px">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Warehouse Detail Table</div></div></div><div class="tbl-wrap" id="whTable"></div></div>
       </div>
     </div>
@@ -591,6 +611,8 @@ document.addEventListener("DOMContentLoaded", function() {
       if (!DATA.tier1city)     DATA.tier1city     = [];
       if (!DATA.city)          DATA.city          = [];
       if (!DATA.state)         DATA.state         = [];
+      if (!DATA.whsplit)       DATA.whsplit       = [];
+      if (!DATA.whday)         DATA.whday         = [];
       syncMonthOrderFromData();
       buildMonthChips();
       renderAll();
@@ -959,12 +981,14 @@ function refreshDashboard() {
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"state",      months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"status",     months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"overall",    months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"whsplit",    months:mParam }), 60000),
+    apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"day",   dimension:"warehouse",  months:mParam }), 60000),
   ];
 
   Promise.all(fetchAll).then(function(results) {
     clearInterval(counter);
     DATA = {};
-    var keys = ["overall","tier","warehouse","courier","city","tier1city","state","status","overall_gran"];
+    var keys = ["overall","tier","warehouse","courier","city","tier1city","state","status","overall_gran","whsplit","whday"];
     results.forEach(function(res, i) {
       if (res.ok && res.rows) DATA[keys[i]] = res.rows;
     });
@@ -991,7 +1015,8 @@ function refreshDashboard() {
         tier1city:     DATA.tier1city     || [],
         warehouse:     DATA.warehouse     || [],
         courier:       DATA.courier       || [],
-        status:        DATA.status        || []
+        status:        DATA.status        || [],
+        whsplit:       DATA.whsplit       || []
       };
       localStorage.setItem("tat_cache_v3", JSON.stringify(toCache));
     } catch(cacheErr) {
@@ -1034,8 +1059,12 @@ function renderAll() {
   });
   renderTierSection(tierRows);
   renderGeoSection(city, state);
+  var whDayRows   = filterByMonth(DATA.whday   || []);
+  var whSplitRows = filterByMonth(DATA.whsplit || []);
+  renderWhHeatmap(whDayRows);
   renderWarehouseSection(whRows);
   renderWhBucketTable(whRows);
+  renderWhSplitTable(whSplitRows);
   renderCourierSection(courier);
   var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
   var tier1CityRows = filterByMonth(DATA.tier1city || []);
@@ -1713,6 +1742,164 @@ function renderGeoSection(cityRows, stateRows) {
     );
   }
 }
+
+// ── Out TAT Heatmap — Day Level ──────────────────────────────
+// Y: warehouses, X: last 30 days descending (newest left)
+// Color: higher ideal% = darker red
+function renderWhHeatmap(dayRows) {
+  var container = document.getElementById("whHeatmap");
+  if (!container) return;
+  if (!dayRows || !dayRows.length) {
+    container.innerHTML = "<div class='empty'><p>No day-level data — re-upload a month to populate</p></div>";
+    return;
+  }
+
+  // Build date × warehouse matrix from day-level warehouse rows
+  // dimension_value = warehouse name, date field = date
+  var today    = new Date();
+  var cutoff   = new Date(today); cutoff.setDate(cutoff.getDate() - 30);
+
+  // Collect unique dates (last 30 days) and warehouses
+  var dateSet = {}, whSet = {};
+  dayRows.forEach(function(r) {
+    if (!r.date) return;
+    var d = String(r.date).slice(0, 10);
+    var dt = new Date(d + "T00:00:00Z");
+    if (dt < cutoff) return;
+    dateSet[d] = dt;
+    whSet[r.dimension_value] = 1;
+  });
+
+  // Sort dates descending (newest left)
+  var dates = Object.keys(dateSet).sort(function(a,b){ return dateSet[b]-dateSet[a]; });
+  var whs   = Object.keys(whSet).sort();
+
+  if (!dates.length) {
+    container.innerHTML = "<div class='empty'><p>No data in last 30 days</p></div>";
+    return;
+  }
+
+  // Build lookup: wh → date → {wh_ideal, total (orders with warehouse_tat)}
+  var matrix = {};
+  whs.forEach(function(w) {
+    matrix[w] = {};
+    dates.forEach(function(d) { matrix[w][d] = { ideal: 0, total: 0 }; });
+  });
+  dayRows.forEach(function(r) {
+    if (!r.date) return;
+    var d  = String(r.date).slice(0, 10);
+    var dt = new Date(d + "T00:00:00Z");
+    if (dt < cutoff) return;
+    var wh = r.dimension_value;
+    if (!matrix[wh] || !matrix[wh][d]) return;
+    var cell = matrix[wh][d];
+    cell.ideal += n(r.wh_ideal);
+    // total pickups = ideal + plus1 + plus2 + plus3 + plus4plus
+    cell.total += n(r.wh_ideal) + n(r.wh_plus1) + n(r.wh_plus2) + n(r.wh_plus3) + n(r.wh_plus4plus);
+  });
+
+  // Render as HTML table
+  var cellW = Math.max(32, Math.min(52, Math.floor((container.offsetWidth - 200) / dates.length)));
+  var CELL  = "width:" + cellW + "px;min-width:" + cellW + "px;text-align:center;font-size:.58rem;font-family:var(--mono);padding:3px 1px;border:1px solid var(--border);";
+  var HDR   = CELL + "font-weight:600;background:var(--bg2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+  var WH_W  = "width:160px;min-width:160px;font-size:.68rem;font-weight:600;padding:4px 8px;border:1px solid var(--border);white-space:nowrap;";
+
+  // Format date header: "Mar 1"
+  function fmtD(d) {
+    var dt = new Date(d + "T00:00:00Z");
+    return dt.toLocaleDateString("en-IN",{day:"numeric",month:"short"});
+  }
+
+  // Color: 0% → white, 100% → deep red
+  function heatColor(pct) {
+    if (pct === null) return "background:#F9FAFB;color:#9CA3AF";
+    var intensity = Math.round(pct);  // 0-100
+    // Interpolate white → #EF4444 (red)
+    var r = 255, g = Math.round(255 - intensity * 1.77), b = Math.round(255 - intensity * 1.77);
+    g = Math.max(0, g); b = Math.max(0, b);
+    var textColor = intensity > 55 ? "#fff" : "#374151";
+    return "background:rgb(" + r + "," + g + "," + b + ");color:" + textColor;
+  }
+
+  var rows_html = whs.map(function(wh) {
+    var cells = dates.map(function(d) {
+      var cell = matrix[wh][d];
+      var pct  = cell.total > 0 ? round2(cell.ideal / cell.total * 100) : null;
+      var disp = pct !== null ? pct + "%" : "—";
+      return "<td style='" + CELL + heatColor(pct) + "'>" + disp + "</td>";
+    }).join("");
+    return "<tr><td style='" + WH_W + "'>" + wh + "</td>" + cells + "</tr>";
+  }).join("");
+
+  var header = "<tr><th style='" + WH_W + "font-size:.6rem;background:var(--bg2);border:1px solid var(--border)'>Warehouse</th>" +
+    dates.map(function(d){ return "<th style='" + HDR + "'>" + fmtD(d) + "</th>"; }).join("") + "</tr>";
+
+  container.innerHTML = "<div style='font-size:.65rem;color:var(--muted);margin-bottom:6px'>Ideal bucket = Pickup Date = Ideal Pickup Date (A) · darker red = higher % picked late</div>" +
+    "<table style='border-collapse:collapse;width:100%'>" + header + rows_html + "</table>";
+}
+
+
+// ── Warehouse Split — Tier 1 Cities ─────────────────────────
+// Y: warehouses, X: Tier 1 cities, value: % of WH orders going to that city
+function renderWhSplitTable(splitRows) {
+  var container = document.getElementById("whSplitTable");
+  if (!container) return;
+  if (!splitRows || !splitRows.length) {
+    container.innerHTML = "<div class='empty'><p>No data — rebuild cache after deployment</p></div>";
+    return;
+  }
+
+  // dimension_value encoded as "warehouse|||city"
+  // Aggregate across selected months
+  var whCity = {};   // wh → city → count
+  var whTotal = {};  // wh → total
+  splitRows.forEach(function(r) {
+    var parts = (r.dimension_value || "").split("|||");
+    if (parts.length < 2) return;
+    var wh   = parts[0].trim();
+    var city = parts[1].trim();
+    if (!whCity[wh])   whCity[wh]   = {};
+    if (!whTotal[wh])  whTotal[wh]  = 0;
+    whCity[wh][city]  = (whCity[wh][city]  || 0) + n(r.total_orders);
+    whTotal[wh]       += n(r.total_orders);
+  });
+
+  var whs    = Object.keys(whCity).sort();
+  var cities = TIER1_CITIES.filter(function(c) {
+    return whs.some(function(w) { return whCity[w][c]; });
+  });
+
+  // Grayscale: higher % → darker gray
+  function grayCell(pct) {
+    if (pct === null || pct === 0) return "background:#F9FAFB;color:#D1D5DB";
+    // 0% → near white (#F3F4F6), 100% → dark (#1F2937)
+    var v = Math.round(243 - pct * 1.8);
+    v = Math.max(31, v);
+    var textColor = v < 140 ? "#fff" : "#374151";
+    return "background:rgb(" + v + "," + v + "," + v + ");color:" + textColor;
+  }
+
+  var CELL = "text-align:center;font-size:.65rem;font-family:var(--mono);padding:5px 8px;border:1px solid var(--border);";
+  var WH_W = "font-size:.68rem;font-weight:600;padding:5px 10px;border:1px solid var(--border);white-space:nowrap;min-width:160px;";
+  var HDR  = CELL + "font-weight:600;background:var(--bg2);font-size:.62rem;";
+
+  var header = "<tr><th style='" + WH_W + "background:var(--bg2);'>Warehouse</th>" +
+    cities.map(function(c){ return "<th style='" + HDR + "'>" + c + "</th>"; }).join("") + "</tr>";
+
+  var rows_html = whs.map(function(wh) {
+    var tot = whTotal[wh] || 1;
+    var cells = cities.map(function(c) {
+      var cnt = (whCity[wh][c] || 0);
+      var pct = cnt ? round2(cnt / tot * 100) : 0;
+      return "<td style='" + CELL + grayCell(pct) + "'>" +
+        (pct ? pct + "%" : "—") + "</td>";
+    }).join("");
+    return "<tr><td style='" + WH_W + "'>" + wh + "</td>" + cells + "</tr>";
+  }).join("");
+
+  container.innerHTML = "<table style='border-collapse:collapse;width:100%'>" + header + rows_html + "</table>";
+}
+
 
 function renderWarehouseSection(rows) {
   var agg = {};
