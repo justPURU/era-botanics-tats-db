@@ -1780,7 +1780,7 @@ function renderWhHeatmap(dayRows) {
   var matrix = {};
   whs.forEach(function(w) {
     matrix[w] = {};
-    dates.forEach(function(d) { matrix[w][d] = { ideal: 0, total: 0 }; });
+    dates.forEach(function(d) { matrix[w][d] = { out: 0, total: 0 }; });
   });
   dayRows.forEach(function(r) {
     if (!r.date) return;
@@ -1789,10 +1789,11 @@ function renderWhHeatmap(dayRows) {
     if (dt < cutoff) return;
     var wh = r.dimension_value;
     if (!matrix[wh] || !matrix[wh][d]) return;
-    var cell = matrix[wh][d];
-    cell.ideal += n(r.wh_ideal);
-    // total pickups = ideal + plus1 + plus2 + plus3 + plus4plus
-    cell.total += n(r.wh_ideal) + n(r.wh_plus1) + n(r.wh_plus2) + n(r.wh_plus3) + n(r.wh_plus4plus);
+    var cell  = matrix[wh][d];
+    var inTat = n(r.wh_ideal);                                                     // warehouse_tat <= 0
+    var outTat = n(r.wh_plus1) + n(r.wh_plus2) + n(r.wh_plus3) + n(r.wh_plus4plus); // warehouse_tat > 0
+    cell.out   += outTat;
+    cell.total += inTat + outTat;   // total valid = ideal_pickup_a IS NOT NULL
   });
 
   // Render as HTML table
@@ -1821,11 +1822,11 @@ function renderWhHeatmap(dayRows) {
   var rows_html = whs.map(function(wh) {
     var cells = dates.map(function(d) {
       var cell = matrix[wh][d];
-      // Out TAT % = non-Ideal orders / total valid orders
-      // Higher Out TAT % = worse performance = darker red
-      var outTat = cell.total > 0 ? round2((cell.total - cell.ideal) / cell.total * 100) : null;
-      var disp   = outTat !== null ? outTat + "%" : "—";
-      return "<td style='" + CELL + heatColor(outTat) + "'>" + disp + "</td>";
+      // Out TAT % = orders where warehouse_tat > 0 / total valid (ideal_pickup_a not null)
+      // Higher % = worse = darker red
+      var outTatPct = cell.total > 0 ? round2(cell.out / cell.total * 100) : null;
+      var disp      = outTatPct !== null ? outTatPct + "%" : "—";
+      return "<td style='" + CELL + heatColor(outTatPct) + "'>" + disp + "</td>";
     }).join("");
     return "<tr><td style='" + WH_W + "'>" + wh + "</td>" + cells + "</tr>";
   }).join("");
