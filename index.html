@@ -262,6 +262,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
         <option value="month">Monthly</option>
         <option value="week">Weekly</option>
       </select></div>
+      <div style="display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px">
+        <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted);white-space:nowrap">Date:</span>
+        <input type="date" id="dateFrom" style="border:none;background:transparent;font-size:.72rem;font-family:var(--mono);color:var(--text2);outline:none;width:110px" onchange="onDateInput()">
+        <span style="color:var(--muted);font-size:.7rem">–</span>
+        <input type="date" id="dateTo" style="border:none;background:transparent;font-size:.72rem;font-family:var(--mono);color:var(--text2);outline:none;width:110px" onchange="onDateInput()">
+        <button class="btn btn-p" id="dateApplyBtn" onclick="applyDateFilter()" style="padding:3px 8px;font-size:.68rem">Apply</button>
+        <button class="btn" id="dateClearBtn" onclick="clearDateFilter()" style="padding:3px 8px;font-size:.68rem;display:none">✕</button>
+      </div>
       <button class="btn btn-p" id="refreshBtn" onclick="refreshDashboard()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
         Refresh
@@ -319,9 +327,12 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
         </div>
       </div>
 
-      <!-- 3. Monthly TAT Performance Table -->
+      <!-- 3. Monthly TAT Performance Tables -->
       <div style="margin-bottom:14px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div><div class="card-sub">All orders</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
+      </div>
+      <div style="margin-bottom:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — Monthly TAT Performance</div><div class="card-sub">Delivered orders from Tier 1 pincodes only</div></div></div><div class="tbl-wrap" id="tier1TatTable"></div></div>
       </div>
 
       <!-- 4. Trend charts at bottom -->
@@ -364,7 +375,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
     <!-- WAREHOUSE -->
     <div class="sec" id="sec-warehouse">
-      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup delay — actual vs ideal pickup date</p></div>
+      <div class="sec-hd"><h2>Warehouse Performance</h2><p>Pickup timeliness vs ideal pickup date (A)</p></div>
+      <!-- Warehouse pickup bucket table — main chart -->
+      <div style="margin-bottom:14px">
+        <div class="card">
+          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Based on diff between Pickup Date and Ideal Pickup Date (A)</div></div></div>
+          <div class="tbl-wrap" id="whBucketTable"></div>
+        </div>
+      </div>
       <div class="g2">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Pickup Delay Distribution</div></div></div><div id="pickupBars"></div></div>
         <div class="card"><div class="card-hd"><div><div class="card-ttl">On-Time Pickup % by Warehouse</div></div></div><div class="ch-wrap"><canvas id="whChart" height="220"></canvas></div></div>
@@ -708,6 +726,15 @@ function onMonthChk(val) {
     }
   }
   filterByMonth._logged = false;  // reset debug log for new data
+  // Rule: month chips and date filter are mutually exclusive
+  if (DATE_MODE) {
+    DATE_MODE = false;
+    activeDateFrom = null; activeDateTo = null;
+    var dfEl = document.getElementById("dateFrom"); if (dfEl) dfEl.value = "";
+    var dtEl = document.getElementById("dateTo");   if (dtEl) dtEl.value = "";
+    var dcEl = document.getElementById("dateClearBtn"); if (dcEl) dcEl.style.display = "none";
+    var daEl = document.getElementById("dateApplyBtn"); if (daEl) daEl.style.fontWeight = "";
+  }
   updateRangeBadge();
   if (Object.keys(DATA).length > 0) renderAll();
 }
@@ -812,6 +839,89 @@ function apiFetch(url, timeoutMs) {
     sc.src = url + sep + "callback=" + cb;
     document.head.appendChild(sc);
   });
+}
+
+// ── Date filter functions ─────────────────────────────────────
+function onDateInput() {
+  var applyBtn = document.getElementById("dateApplyBtn");
+  var from = document.getElementById("dateFrom").value;
+  var to   = document.getElementById("dateTo").value;
+  if (applyBtn) applyBtn.style.fontWeight = (from || to) ? "700" : "";
+}
+
+function applyDateFilter() {
+  var from = document.getElementById("dateFrom").value;
+  var to   = document.getElementById("dateTo").value;
+  if (!from && !to) { clearDateFilter(); return; }
+  activeDateFrom = from || null;
+  activeDateTo   = to   || null;
+  DATE_MODE      = true;
+  selectedMonths = [];
+  MONTH_ORDER.forEach(function(m) {
+    var el = document.getElementById("chip-" + m.replace(/ /g,"_"));
+    if (el) el.classList.remove("on");
+  });
+  var allChip = document.getElementById("chip-ALL");
+  if (allChip) allChip.classList.remove("on");
+  var c = document.getElementById("dateClearBtn"); if (c) c.style.display = "inline-block";
+  var rb = document.getElementById("rangeBadge");
+  if (rb) { rb.textContent = (from || "…") + " → " + (to || "…"); rb.style.display = "inline-block"; }
+  if (Object.keys(DATA).length > 0) renderAll();
+}
+
+function clearDateFilter() {
+  activeDateFrom = null; activeDateTo = null; DATE_MODE = false;
+  var f = document.getElementById("dateFrom");    if (f) f.value = "";
+  var t = document.getElementById("dateTo");      if (t) t.value = "";
+  var c = document.getElementById("dateClearBtn"); if (c) c.style.display = "none";
+  var a = document.getElementById("dateApplyBtn"); if (a) a.style.fontWeight = "";
+  var allChip = document.getElementById("chip-ALL"); if (allChip) allChip.classList.add("on");
+  updateRangeBadge();
+  if (Object.keys(DATA).length > 0) renderAll();
+}
+
+function parseDate(s) { return s ? new Date(s + "T00:00:00Z") : null; }
+
+function filterByDateRange(rows) {
+  if (!DATE_MODE || (!activeDateFrom && !activeDateTo)) return rows;
+  var from = parseDate(activeDateFrom);
+  var to   = parseDate(activeDateTo);
+  function monthToRange(label) {
+    var mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    var yr = parseInt("20" + label.slice(3), 10);
+    var mIdx = mo[label.slice(0,3)];
+    if (mIdx === undefined || isNaN(yr)) return null;
+    return { start: new Date(Date.UTC(yr,mIdx,1)), end: new Date(Date.UTC(yr,mIdx+1,0)) };
+  }
+  return rows.filter(function(r) {
+    var range = monthToRange(r.month_label || "");
+    if (!range) return true;
+    if (from && range.end   < from) return false;
+    if (to   && range.start > to)   return false;
+    return true;
+  });
+}
+
+function partialMonthFraction(monthLabel) {
+  if (!DATE_MODE) return 1;
+  var mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+  var yr   = parseInt("20" + monthLabel.slice(3), 10);
+  var mIdx = mo[monthLabel.slice(0,3)];
+  if (mIdx === undefined || isNaN(yr)) return 1;
+  var mStart = new Date(Date.UTC(yr,mIdx,1));
+  var mEnd   = new Date(Date.UTC(yr,mIdx+1,0));
+  var rFrom  = activeDateFrom ? parseDate(activeDateFrom) : mStart;
+  var rTo    = activeDateTo   ? parseDate(activeDateTo)   : mEnd;
+  var effFrom = rFrom > mStart ? rFrom : mStart;
+  var effTo   = rTo   < mEnd   ? rTo   : mEnd;
+  if (effTo < effFrom) return 0;
+  return Math.min(1, (Math.round((effTo - effFrom)/86400000) + 1) / mEnd.getUTCDate());
+}
+
+function isPartialMonth(monthLabel) {
+  if (!DATE_MODE) return false;
+  var frac = partialMonthFraction(monthLabel);
+  return frac > 0 && frac < 0.99;
 }
 
 // ══════════════════════════════════════════════════════════
@@ -925,6 +1035,7 @@ function renderAll() {
   renderTierSection(tierRows);
   renderGeoSection(city, state);
   renderWarehouseSection(whRows);
+  renderWhBucketTable(whRows);
   renderCourierSection(courier);
   var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
   var tier1CityRows = filterByMonth(DATA.tier1city || []);
@@ -932,6 +1043,7 @@ function renderAll() {
     renderTier1CityTable(tier1CityRows);
     renderTier1BucketTable(tier1CityRows);
     renderTATTable(overallMonth);
+    renderTier1TatTable(tier1CityRows);
     renderTATTrend(overallMonth);
     renderBreachTrend(overallMonth);
     renderT1TatTrend(tier1CityRows);
@@ -1403,6 +1515,118 @@ function renderT1BreachTrend(rows) {
   mkChart("t1BreachTrendChart", "line", { labels: labels, datasets: datasets },
     { plugins:{ legend:{ position:"right", labels:{ font:{ family:"IBM Plex Mono", size:10 }, boxWidth:9, padding:8 }}},
       scales:{ x: xA(""), y:{ ...yA("%"), beginAtZero: true, max: 100 }}});
+}
+
+// ── Tier 1 Cities — Monthly TAT Performance Table ────────────
+function renderTier1TatTable(rows) {
+  var container = document.getElementById("tier1TatTable");
+  if (!container) return;
+  if (!rows || !rows.length) {
+    container.innerHTML = "<div class='empty'><p>No Tier 1 data</p></div>"; return;
+  }
+
+  // months in descending order
+  var months = MONTH_ORDER.filter(function(m) {
+    return rows.some(function(r) { return r.month_label === m; });
+  }).slice().reverse();
+
+  // Aggregate all cities into per-month totals
+  var byMonth = {};
+  rows.forEach(function(r) {
+    var m = r.month_label;
+    if (!byMonth[m]) byMonth[m] = {
+      total:0, del:0, tatS:0, tatN:0, withinS:0, withinN:0, breachS:0, breachN:0,
+      b02:0, b34:0, b57:0, b812:0, bgt:0
+    };
+    var d = byMonth[m];
+    d.total += n(r.total_orders);
+    d.del   += n(r.delivered_orders);
+    if (r.avg_delivery_tat != null) { d.tatS += r.avg_delivery_tat * n(r.delivered_orders); d.tatN += n(r.delivered_orders); }
+    if (r.pct_within_sla != null)   { d.withinS += r.pct_within_sla * n(r.total_orders); d.withinN += n(r.total_orders); }
+    if (r.pct_breach != null)       { d.breachS += r.pct_breach * n(r.total_orders); d.breachN += n(r.total_orders); }
+    d.b02  += n(r.tat_0_2);
+    d.b34  += n(r.tat_3_4);
+    d.b57  += n(r.tat_5_7);
+    d.b812 += n(r.tat_8_12);
+    d.bgt  += n(r.tat_gt12);
+  });
+
+  var headers = ["Month","Total","Delivered","Avg TAT","Within SLA","Breach","TAT 0-2","3-4","5-7","8-12",">12"];
+  var rowData = months.map(function(m) {
+    var d = byMonth[m];
+    if (!d) return [shortMonth(m),"--","--","--","--","--","--","--","--","--","--"];
+    var partial = isPartialMonth(m) ? " *" : "";
+    var avgTat  = d.tatN    ? round2(d.tatS / d.tatN)    : null;
+    var within  = d.withinN ? round2(d.withinS / d.withinN) : null;
+    var breach  = d.breachN ? round2(d.breachS / d.breachN) : null;
+    return [
+      shortMonth(m) + partial,
+      fmtN(d.total), fmtN(d.del),
+      tatBdg(avgTat), pctBdg(within, 80, true), pctBdg(breach, 30, false),
+      fmtN(d.b02), fmtN(d.b34), fmtN(d.b57), fmtN(d.b812), fmtN(d.bgt)
+    ];
+  });
+
+  container.innerHTML = tblHTML(headers, rowData);
+}
+
+
+// ── Warehouse Pickup Timeliness Bucket Table ──────────────────
+// Buckets: Ideal (0d), Ideal+1 (1d), Ideal+2 (2d), Ideal+3 (3d), Ideal+4+ (>3d)
+function renderWhBucketTable(rows) {
+  var container = document.getElementById("whBucketTable");
+  if (!container) return;
+  if (!rows || !rows.length) {
+    container.innerHTML = "<div class='empty'><p>No warehouse data — warehouse_tat reflects pickup vs ideal_pickup_a</p></div>"; return;
+  }
+
+  // analytics_cache has avg_warehouse_tat and pct_ontime_pickup but not bucket counts.
+  // We derive bucket distribution from avg_warehouse_tat as a proxy display.
+  // NOTE: For true bucket counts, a new BQ dimension "whbucket" is needed.
+  // For now render what we have: per-warehouse summary with colour-coded delay badges.
+  var whs = {};
+  rows.forEach(function(r) {
+    var wh = r.dimension_value;
+    if (!whs[wh]) whs[wh] = { total:0, wTatS:0, wTatN:0, onTimeS:0, onTimeN:0 };
+    var d = whs[wh];
+    d.total += n(r.total_orders);
+    if (r.avg_warehouse_tat  != null) { d.wTatS  += r.avg_warehouse_tat  * n(r.total_orders); d.wTatN  += n(r.total_orders); }
+    if (r.pct_ontime_pickup  != null) { d.onTimeS += r.pct_ontime_pickup * n(r.total_orders); d.onTimeN += n(r.total_orders); }
+  });
+
+  var sortedWhs = Object.keys(whs).sort(function(a,b){ return whs[b].total - whs[a].total; });
+
+  var BUCKETS = [
+    { label: "Ideal (0d)",           style: "color:#059669;font-weight:700" },
+    { label: "Ideal +1 Day",         style: "color:#2563EB;font-weight:600" },
+    { label: "Ideal +2 Days",        style: "color:#D97706;font-weight:600" },
+    { label: "Ideal +3 Days",        style: "color:#EF4444;font-weight:600" },
+    { label: "Ideal +4th Day ↑",     style: "color:#991B1B;font-weight:700" }
+  ];
+
+  // Show per-warehouse: avg pickup delay + on-time % + note to run SQL for buckets
+  var headers = ["Warehouse", "Orders", "Avg Pickup Delay", "On-Time %", "Status"];
+  var rowData = sortedWhs.map(function(wh) {
+    var d = whs[wh];
+    var avgDelay = d.wTatN ? round2(d.wTatS / d.wTatN) : null;
+    var onTime   = d.onTimeN ? round2(d.onTimeS / d.onTimeN) : null;
+
+    var bucket;
+    if (avgDelay === null) { bucket = "--"; }
+    else if (avgDelay <= 0)  { bucket = "<span style='" + BUCKETS[0].style + "'>● Ideal (0d)</span>"; }
+    else if (avgDelay <= 1)  { bucket = "<span style='" + BUCKETS[1].style + "'>● Ideal +1 Day</span>"; }
+    else if (avgDelay <= 2)  { bucket = "<span style='" + BUCKETS[2].style + "'>● Ideal +2 Days</span>"; }
+    else if (avgDelay <= 3)  { bucket = "<span style='" + BUCKETS[3].style + "'>● Ideal +3 Days</span>"; }
+    else                     { bucket = "<span style='" + BUCKETS[4].style + "'>↑ Ideal +4th Day+</span>"; }
+
+    return [wh, fmtN(d.total),
+      avgDelay != null ? (avgDelay <= 0 ? "<span class='b bg'>On Time</span>" : "<span class='b ba'>+" + avgDelay + "d</span>") : "--",
+      pctBdg(onTime, 80, true),
+      bucket
+    ];
+  });
+
+  container.innerHTML = tblHTML(headers, rowData);
 }
 
 function renderTierSection(rows) {
