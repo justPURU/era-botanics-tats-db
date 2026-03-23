@@ -1572,58 +1572,70 @@ function renderTier1TatTable(rows) {
 
 
 // ── Warehouse Pickup Timeliness Bucket Table ──────────────────
-// Buckets: Ideal (0d), Ideal+1 (1d), Ideal+2 (2d), Ideal+3 (3d), Ideal+4+ (>3d)
+// Shows real bucket counts from analytics_cache wh_ideal / wh_plus1..4plus columns
 function renderWhBucketTable(rows) {
   var container = document.getElementById("whBucketTable");
   if (!container) return;
   if (!rows || !rows.length) {
-    container.innerHTML = "<div class='empty'><p>No warehouse data — warehouse_tat reflects pickup vs ideal_pickup_a</p></div>"; return;
+    container.innerHTML = "<div class='empty'><p>No warehouse data</p></div>"; return;
   }
 
-  // analytics_cache has avg_warehouse_tat and pct_ontime_pickup but not bucket counts.
-  // We derive bucket distribution from avg_warehouse_tat as a proxy display.
-  // NOTE: For true bucket counts, a new BQ dimension "whbucket" is needed.
-  // For now render what we have: per-warehouse summary with colour-coded delay badges.
+  // Aggregate per warehouse across selected months
   var whs = {};
   rows.forEach(function(r) {
     var wh = r.dimension_value;
-    if (!whs[wh]) whs[wh] = { total:0, wTatS:0, wTatN:0, onTimeS:0, onTimeN:0 };
+    if (!whs[wh]) whs[wh] = {
+      total: 0, wh_ideal: 0, wh_plus1: 0, wh_plus2: 0, wh_plus3: 0, wh_plus4plus: 0,
+      wTatS: 0, wTatN: 0
+    };
     var d = whs[wh];
-    d.total += n(r.total_orders);
-    if (r.avg_warehouse_tat  != null) { d.wTatS  += r.avg_warehouse_tat  * n(r.total_orders); d.wTatN  += n(r.total_orders); }
-    if (r.pct_ontime_pickup  != null) { d.onTimeS += r.pct_ontime_pickup * n(r.total_orders); d.onTimeN += n(r.total_orders); }
+    d.total      += n(r.total_orders);
+    d.wh_ideal   += n(r.wh_ideal);
+    d.wh_plus1   += n(r.wh_plus1);
+    d.wh_plus2   += n(r.wh_plus2);
+    d.wh_plus3   += n(r.wh_plus3);
+    d.wh_plus4plus += n(r.wh_plus4plus);
+    if (r.avg_warehouse_tat != null) {
+      d.wTatS += r.avg_warehouse_tat * n(r.total_orders);
+      d.wTatN += n(r.total_orders);
+    }
   });
 
   var sortedWhs = Object.keys(whs).sort(function(a,b){ return whs[b].total - whs[a].total; });
 
-  var BUCKETS = [
-    { label: "Ideal (0d)",           style: "color:#059669;font-weight:700" },
-    { label: "Ideal +1 Day",         style: "color:#2563EB;font-weight:600" },
-    { label: "Ideal +2 Days",        style: "color:#D97706;font-weight:600" },
-    { label: "Ideal +3 Days",        style: "color:#EF4444;font-weight:600" },
-    { label: "Ideal +4th Day ↑",     style: "color:#991B1B;font-weight:700" }
-  ];
+  var BUCKET_STYLES = {
+    wh_ideal:    "color:#059669;font-weight:700",
+    wh_plus1:    "color:#2563EB;font-weight:600",
+    wh_plus2:    "color:#D97706;font-weight:600",
+    wh_plus3:    "color:#EF4444;font-weight:600",
+    wh_plus4plus:"color:#991B1B;font-weight:700"
+  };
+  var BUCKET_KEYS   = ["wh_ideal","wh_plus1","wh_plus2","wh_plus3","wh_plus4plus"];
+  var BUCKET_LABELS = ["Ideal (0d)", "Ideal +1 Day", "Ideal +2 Days", "Ideal +3 Days", "Ideal +4th Day ↑"];
 
-  // Show per-warehouse: avg pickup delay + on-time % + note to run SQL for buckets
-  var headers = ["Warehouse", "Orders", "Avg Pickup Delay", "On-Time %", "Status"];
+  var headers = ["Warehouse", "With Pickup Data"].concat(BUCKET_LABELS).concat(["Avg Delay"]);
+
   var rowData = sortedWhs.map(function(wh) {
     var d = whs[wh];
-    var avgDelay = d.wTatN ? round2(d.wTatS / d.wTatN) : null;
-    var onTime   = d.onTimeN ? round2(d.onTimeS / d.onTimeN) : null;
+    var pickupTotal = d.wh_ideal + d.wh_plus1 + d.wh_plus2 + d.wh_plus3 + d.wh_plus4plus;
+    var denominator = pickupTotal || 1;
+    var avgDelay    = d.wTatN ? round2(d.wTatS / d.wTatN) : null;
 
-    var bucket;
-    if (avgDelay === null) { bucket = "--"; }
-    else if (avgDelay <= 0)  { bucket = "<span style='" + BUCKETS[0].style + "'>● Ideal (0d)</span>"; }
-    else if (avgDelay <= 1)  { bucket = "<span style='" + BUCKETS[1].style + "'>● Ideal +1 Day</span>"; }
-    else if (avgDelay <= 2)  { bucket = "<span style='" + BUCKETS[2].style + "'>● Ideal +2 Days</span>"; }
-    else if (avgDelay <= 3)  { bucket = "<span style='" + BUCKETS[3].style + "'>● Ideal +3 Days</span>"; }
-    else                     { bucket = "<span style='" + BUCKETS[4].style + "'>↑ Ideal +4th Day+</span>"; }
+    var bucketCells = BUCKET_KEYS.map(function(key, ki) {
+      var cnt = d[key] || 0;
+      var pct = round2(cnt / denominator * 100);
+      var isLast = key === "wh_plus4plus";
+      return "<span style='" + BUCKET_STYLES[key] + "'>" +
+             (isLast ? "↑ " : "") + pct + "%</span>" +
+             "<span style='color:var(--muted);font-size:.65rem;margin-left:3px'>(" + fmtN(cnt) + ")</span>";
+    });
 
-    return [wh, fmtN(d.total),
-      avgDelay != null ? (avgDelay <= 0 ? "<span class='b bg'>On Time</span>" : "<span class='b ba'>+" + avgDelay + "d</span>") : "--",
-      pctBdg(onTime, 80, true),
-      bucket
-    ];
+    var delayCell = avgDelay === null ? "--" :
+      (avgDelay <= 0
+        ? "<span class='b bg'>On Time</span>"
+        : "<span class='b ba'>+" + avgDelay + "d</span>");
+
+    return [wh, fmtN(pickupTotal)].concat(bucketCells).concat([delayCell]);
   });
 
   container.innerHTML = tblHTML(headers, rowData);
