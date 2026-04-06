@@ -1014,16 +1014,17 @@ function refreshDashboard() {
 // ══════════════════════════════════════════════════════════
 function renderAll() {
   // ── Overview: unfiltered overall + month-filtered status/tat ──
-  var overallAll  = DATA.overall || [];
-  var statusR     = filterByMonth(DATA.status || []);
-  var agg         = aggRows(overallAll);          // scorecards: all months
+  var overallAll      = DATA.overall || [];
+  var overallFiltered = filterByMonth(overallAll);
+  var statusR         = filterByMonth(DATA.status || []);
+  var agg             = aggRows(overallFiltered);   // scorecards: month-filtered
   updateRangeBadge();
 
   renderKPIs(agg);
-  renderBuckets(aggRows(filterByMonth(overallAll)));  // TAT Distribution — month-filtered
+  renderBuckets(agg);                               // TAT Distribution — same filtered agg
   deferChart("overview", function() {
-    renderVolTrend(overallAll);                   // trend: all months
-    renderStatusDonut(statusR);                   // status: month-filtered
+    renderVolTrend(overallAll);                     // vol trend: always all months
+    renderStatusDonut(statusR);                     // status: month-filtered
   });
 
   // ── Tier: section date filter OR month filter ──
