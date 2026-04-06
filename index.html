@@ -57,7 +57,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 
 /* ── MAIN ── */
 .main{flex:1;min-width:0;display:flex;flex-direction:column;overflow-x:hidden}
-.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:60px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
+.topbar{background:var(--white);border-bottom:1px solid var(--border);padding:0 24px;height:52px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;position:sticky;top:0;z-index:40}
 .tb-left{display:flex;align-items:center;gap:10px}
 .page-ttl{font-size:.9rem;font-weight:700}
 .sync-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -72,14 +72,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
 .badge-sync{font-family:var(--mono);font-size:.62rem;color:var(--muted);padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:5px}
 
 /* FILTER BAR */
-.fbar{background:var(--white);border-bottom:1px solid var(--border);padding:8px 24px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.fbar{background:var(--white);border-bottom:1px solid var(--border);padding:6px 24px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;position:sticky;top:52px;z-index:39}
 .flbl{font-size:.65rem;font-family:var(--mono);color:var(--muted);margin-right:2px}
 .chip{padding:3px 10px;border-radius:20px;border:1px solid var(--border2);background:var(--white);color:var(--muted);font-size:.7rem;font-weight:500;cursor:pointer;transition:all .12s}
 .chip:hover{border-color:var(--blue-l);color:var(--blue)}
 .chip.on{background:var(--blue-bg);border-color:var(--blue-l);color:var(--blue);font-weight:600}
 
 /* CONTENT */
-.content{flex:1;padding:24px}
+.content{flex:1;padding:24px;overflow-y:auto;height:calc(100vh - 52px - 41px)}
 .sec{display:none}.sec.active{display:block;animation:fadeIn .2s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:translateY(0)}}
 .sec-hd{margin-bottom:18px}
@@ -233,8 +233,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     <button class="ni" onclick="navTo('geo',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></span><span class="ni-lbl">Geo Intelligence</span></button>
     <button class="ni" onclick="navTo('warehouse',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><rect x="3" y="9" width="18" height="13" rx="1"/><polyline points="3 9 12 2 21 9"/></svg></span><span class="ni-lbl">Warehouse</span></button>
     <button class="ni" onclick="navTo('courier',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13" rx="1"/><path d="M16 8h4l3 3v5h-7V8z"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg></span><span class="ni-lbl">Courier</span></button>
-    <button class="ni" onclick="navTo('trends',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg></span><span class="ni-lbl">Time Trends</span></button>
-    <button class="ni" onclick="navTo('revenue',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="ni-lbl">Revenue</span></button>
+<button class="ni" onclick="navTo('collections',this)"><span class="ni-ic"><svg viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></span><span class="ni-lbl">Collections</span></button>
     <div class="sb-lbl" style="margin-top:8px">SYSTEM</div>
     <button class="ni" onclick="openConfig()"><span class="ni-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></span><span class="ni-lbl">Config &amp; Upload</span></button>
   </nav>
@@ -257,22 +256,9 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
       <div class="badge-sync" id="rangeBadge" style="display:none"></div>
     </div>
     <div class="sync-row">
-      <div class="sel-wrap"><select id="monthFilter" aria-label="Filter by month"><option value="ALL">All Months</option></select></div>
-      <div class="sel-wrap"><select id="granFilter" aria-label="Granularity">
-        <option value="month">Monthly</option>
-        <option value="week">Weekly</option>
-      </select></div>
-      <div style="display:flex;align-items:center;gap:4px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:4px 8px">
-        <span style="font-size:.62rem;font-family:var(--mono);color:var(--muted);white-space:nowrap">Date:</span>
-        <input type="date" id="dateFrom" style="border:none;background:transparent;font-size:.72rem;font-family:var(--mono);color:var(--text2);outline:none;width:110px" onchange="onDateInput()">
-        <span style="color:var(--muted);font-size:.7rem">–</span>
-        <input type="date" id="dateTo" style="border:none;background:transparent;font-size:.72rem;font-family:var(--mono);color:var(--text2);outline:none;width:110px" onchange="onDateInput()">
-        <button class="btn btn-p" id="dateApplyBtn" onclick="applyDateFilter()" style="padding:3px 8px;font-size:.68rem">Apply</button>
-        <button class="btn" id="dateClearBtn" onclick="clearDateFilter()" style="padding:3px 8px;font-size:.68rem;display:none">✕</button>
-      </div>
       <button class="btn btn-p" id="refreshBtn" onclick="refreshDashboard()">
         <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M1 4v6h6"/><path d="M3.51 15a9 9 0 1 0 .49-3"/></svg>
-        Refresh
+        Sync
       </button>
       <button class="btn btn-g" onclick="openConfig()">⚙ Config</button>
     </div>
@@ -290,7 +276,7 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     <!-- OVERVIEW -->
     <div class="sec active" id="sec-overview">
       <div class="sec-hd"><h2>Executive Overview</h2><p>High-level performance across all months and geographies</p></div>
-      <div class="kpi-grid" id="kpiGrid"><div class="empty" style="grid-column:1/-1"><div class="ei">📡</div><p>Refresh dashboard to load data</p></div></div>
+      <div class="kpi-grid" id="kpiGrid"><div class="empty" style="grid-column:1/-1"><div class="ei">📡</div><p>Click Sync to load data</p></div></div>
       <div id="overviewCharts" style="display:none">
         <div class="g2">
           <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly Order Volume &amp; Delivery Rate</div><div class="card-sub">Trend over time</div></div></div><div class="ch-wrap"><canvas id="volTrendChart" height="190"></canvas></div></div>
@@ -307,48 +293,51 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     <div class="sec" id="sec-tat">
       <div class="sec-hd"><h2>TAT Deep Dive</h2><p>Delivery TAT trends, bucket analysis, breach tracking</p></div>
 
-      <!-- 1. Tier 1 City Monthly TAT Performance (top, no month filter) -->
+      <!-- 1. Tier 1 City TAT Bucket Distribution (month filter + sec date filter) -->
       <div style="margin-bottom:14px">
         <div class="card">
           <div class="card-hd">
-            <div><div class="card-ttl">Tier 1 City — Monthly TAT Performance</div><div class="card-sub">Bangalore · Delhi/NCR · Mumbai · Hyd &amp; Telangana · Chennai · Pune · Kolkata · Ahmedabad</div></div>
+            <div><div class="card-ttl">Tier 1 City — TAT Bucket Distribution</div><div class="card-sub">% of delivered orders per TAT bucket · month filter or date range</div></div>
           </div>
-          <div class="tbl-wrap" id="tier1CityTable"></div>
-        </div>
-      </div>
-
-      <!-- 2. Tier 1 City TAT Bucket Distribution -->
-      <div style="margin-bottom:14px">
-        <div class="card">
-          <div class="card-hd">
-            <div><div class="card-ttl">Tier 1 City — TAT Bucket Distribution</div><div class="card-sub">% of delivered orders per TAT bucket across all selected months</div></div>
+          <div class="sec-date-bar">
+            <span class="flbl">Date:</span>
+            <input type="date" id="tatDateFrom" onchange="applySecDate('tat')">
+            <span style="color:var(--muted);font-size:.7rem">–</span>
+            <input type="date" id="tatDateTo" onchange="applySecDate('tat')">
+            <button class="btn btn-p" onclick="applySecDate('tat')" style="padding:3px 8px;font-size:.68rem">Apply</button>
+            <button class="btn" id="tatDateClear" onclick="clearSecDate('tat')" style="padding:3px 8px;font-size:.68rem;display:none">✕ Clear</button>
           </div>
           <div class="tbl-wrap" id="tier1BucketTable"></div>
         </div>
       </div>
 
-      <!-- 3. Monthly TAT Performance Tables -->
+      <!-- 3. Monthly TAT Performance Table -->
       <div style="margin-bottom:14px">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Monthly TAT Performance Table</div><div class="card-sub">All orders</div></div></div><div class="tbl-wrap" id="tatTable"></div></div>
-      </div>
-      <div style="margin-bottom:14px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — Monthly TAT Performance</div><div class="card-sub">Delivered orders from Tier 1 pincodes only</div></div></div><div class="tbl-wrap" id="tier1TatTable"></div></div>
       </div>
 
       <!-- 4. Trend charts at bottom -->
       <div class="g2">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">All orders · monthly</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div><div class="card-sub">All orders · monthly</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT Trend</div><div class="card-sub">All orders · week-level</div></div></div><div class="ch-wrap"><canvas id="tatTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">SLA Breach % Trend</div><div class="card-sub">All orders · week-level</div></div></div><div class="ch-wrap"><canvas id="breachTrendChart" height="210"></canvas></div></div>
       </div>
       <div class="g2" style="margin-top:14px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — Avg TAT Trend</div><div class="card-sub">Per city · monthly</div></div></div><div class="ch-wrap"><canvas id="t1TatTrendChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — SLA Breach % Trend</div><div class="card-sub">Per city · monthly</div></div></div><div class="ch-wrap"><canvas id="t1BreachTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — Avg TAT Trend</div><div class="card-sub">Per city · week-level</div></div></div><div class="ch-wrap"><canvas id="t1TatTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Tier 1 Cities — SLA Breach % Trend</div><div class="card-sub">Per city · week-level</div></div></div><div class="ch-wrap"><canvas id="t1BreachTrendChart" height="210"></canvas></div></div>
       </div>
     </div>
 
     <!-- TIER -->
     <div class="sec" id="sec-tier">
       <div class="sec-hd"><h2>Tier Analysis</h2><p>Performance by pincode-based delivery tier</p></div>
+      <div class="sec-date-bar">
+        <span class="flbl">Date filter:</span>
+        <input type="date" id="tierDateFrom" onchange="applySecDate('tier')">
+        <span style="color:var(--muted);font-size:.7rem">–</span>
+        <input type="date" id="tierDateTo" onchange="applySecDate('tier')">
+        <button class="btn btn-p" onclick="applySecDate('tier')" style="padding:3px 8px;font-size:.68rem">Apply</button>
+        <button class="btn" id="tierDateClear" onclick="clearSecDate('tier')" style="padding:3px 8px;font-size:.68rem;display:none">✕ Clear</button>
+      </div>
       <div class="tier-grid" id="tierCards"><div class="empty" style="grid-column:1/-1"><div class="ei">🗺</div><p>No data</p></div></div>
       <div class="g2" id="tierCharts" style="display:none">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT by Tier</div></div></div><div class="ch-wrap"><canvas id="tierTATChart" height="200"></canvas></div></div>
@@ -380,7 +369,15 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
       <!-- 1. Warehouse Pickup Timeliness — Bucket Distribution -->
       <div style="margin-bottom:14px">
         <div class="card">
-          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Pickup Date vs Ideal Pickup Date (A) · null ideal_pickup_a excluded · Out TAT % = non-Ideal orders / valid orders</div></div></div>
+          <div class="card-hd"><div><div class="card-ttl">Warehouse Pickup Timeliness — Bucket Distribution</div><div class="card-sub">Pickup Date vs Ideal Pickup Date (A) · null ideal_pickup_a excluded</div></div></div>
+          <div class="sec-date-bar">
+            <span class="flbl">Date:</span>
+            <input type="date" id="whDateFrom" onchange="applySecDate('wh')">
+            <span style="color:var(--muted);font-size:.7rem">–</span>
+            <input type="date" id="whDateTo" onchange="applySecDate('wh')">
+            <button class="btn btn-p" onclick="applySecDate('wh')" style="padding:3px 8px;font-size:.68rem">Apply</button>
+            <button class="btn" id="whDateClear" onclick="clearSecDate('wh')" style="padding:3px 8px;font-size:.68rem;display:none">✕ Clear</button>
+          </div>
           <div class="tbl-wrap" id="whBucketTable"></div>
         </div>
       </div>
@@ -410,6 +407,14 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     <!-- COURIER -->
     <div class="sec" id="sec-courier">
       <div class="sec-hd"><h2>Courier Performance</h2><p>TAT and SLA by courier and aggregator</p></div>
+      <div class="sec-date-bar">
+        <span class="flbl">Date filter:</span>
+        <input type="date" id="courierDateFrom" onchange="applySecDate('courier')">
+        <span style="color:var(--muted);font-size:.7rem">–</span>
+        <input type="date" id="courierDateTo" onchange="applySecDate('courier')">
+        <button class="btn btn-p" onclick="applySecDate('courier')" style="padding:3px 8px;font-size:.68rem">Apply</button>
+        <button class="btn" id="courierDateClear" onclick="clearSecDate('courier')" style="padding:3px 8px;font-size:.68rem;display:none">✕ Clear</button>
+      </div>
       <div class="g2">
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Avg TAT by Courier</div></div></div><div class="ch-wrap"><canvas id="courierTATChart" height="220"></canvas></div></div>
         <div class="card"><div class="card-hd"><div><div class="card-ttl">Volume by Courier</div></div></div><div class="ch-wrap"><canvas id="courierVolChart" height="220"></canvas></div></div>
@@ -420,34 +425,29 @@ body{background:var(--bg);color:var(--text);font-family:var(--sans);font-size:14
     </div>
 
     <!-- TRENDS -->
-    <div class="sec" id="sec-trends">
-      <div class="sec-hd"><h2>Time Trends</h2><p>Week-level and day-level performance trends</p></div>
-      <div class="g2">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Weekly TAT Trend</div></div></div><div class="ch-wrap"><canvas id="weeklyTATChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Weekly Breach % Trend</div></div></div><div class="ch-wrap"><canvas id="weeklyBreachChart" height="210"></canvas></div></div>
-      </div>
-      <div class="div"></div>
-      <div class="card">
-        <div class="card-hd">
-          <div><div class="card-ttl">Day-Level View</div><div class="card-sub">Last 120 days (select custom range below)</div></div>
-          <div style="display:flex;gap:6px;align-items:center">
-            <input type="date" id="dayFrom" class="finput" style="width:130px;font-size:.68rem"/>
-            <span style="font-size:.7rem;color:var(--muted)">to</span>
-            <input type="date" id="dayTo" class="finput" style="width:130px;font-size:.68rem"/>
-            <button class="btn btn-g" onclick="loadDayLevel()" style="font-size:.7rem;padding:5px 10px">Load</button>
-          </div>
-        </div>
-        <div class="ch-wrap"><canvas id="dayChart" height="200"></canvas></div>
-      </div>
-    </div>
 
     <!-- REVENUE -->
-    <div class="sec" id="sec-revenue">
-      <div class="sec-hd"><h2>Revenue Intelligence</h2><p>Order value analysis — delivered, RTO, NDR breakdown</p></div>
+    <div class="sec" id="sec-collections">
+      <div class="sec-hd"><h2>Collections (₹)</h2><p>Order value analysis — delivered, RTO, COD vs Prepaid, aggregator-wise</p></div>
+      <div class="sec-date-bar">
+        <span class="flbl">Date filter:</span>
+        <input type="date" id="collDateFrom" onchange="applySecDate('coll')">
+        <span style="color:var(--muted);font-size:.7rem">–</span>
+        <input type="date" id="collDateTo" onchange="applySecDate('coll')">
+        <button class="btn btn-p" onclick="applySecDate('coll')" style="padding:3px 8px;font-size:.68rem">Apply</button>
+        <button class="btn" id="collDateClear" onclick="clearSecDate('coll')" style="padding:3px 8px;font-size:.68rem;display:none">✕ Clear</button>
+      </div>
       <div class="kpi-grid" id="revKPIs"></div>
       <div class="g2" style="margin-top:4px">
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Revenue Trend</div></div></div><div class="ch-wrap"><canvas id="revTrendChart" height="210"></canvas></div></div>
-        <div class="card"><div class="card-hd"><div><div class="card-ttl">Revenue by Status</div></div></div><div class="ch-wrap"><canvas id="revStatusChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Collections Trend</div><div class="card-sub">Month-on-month</div></div></div><div class="ch-wrap"><canvas id="revTrendChart" height="210"></canvas></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">COD vs Prepaid Share</div><div class="card-sub">MoM split</div></div></div><div class="ch-wrap"><canvas id="codPrepaidChart" height="210"></canvas></div></div>
+      </div>
+      <div class="g2" style="margin-top:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">By Tier</div><div class="card-sub">Collections by tier</div></div></div><div class="tbl-wrap" id="collTierTable"></div></div>
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Courier Aggregator — COD Collections</div><div class="card-sub">COD value by aggregator</div></div></div><div class="tbl-wrap" id="collAggTable"></div></div>
+      </div>
+      <div style="margin-top:14px">
+        <div class="card"><div class="card-hd"><div><div class="card-ttl">Month × Aggregator Collections</div><div class="card-sub">COD share breakdown</div></div></div><div class="tbl-wrap" id="collMonthAggTable"></div></div>
       </div>
     </div>
 
@@ -581,14 +581,14 @@ var activeChip = "ALL";
 var PAGE_TITLES = {
   overview:"Overview", tat:"TAT Deep Dive", tier:"Tier Analysis",
   geo:"Geo Intelligence", warehouse:"Warehouse", courier:"Courier",
-  trends:"Time Trends", revenue:"Revenue"
+  collections:"Collections (₹)"
 };
 
 // ══════════════════════════════════════════════════════════
 // INIT
 // ══════════════════════════════════════════════════════════
 document.addEventListener("DOMContentLoaded", function() {
-  buildMonthSelect("monthFilter");
+  
   buildMonthSelect("upMonth");
   renderCfgRows();
   buildMonthChips();   // render month filter chips in fbar
@@ -742,16 +742,7 @@ function onMonthChk(val) {
       });
     }
   }
-  filterByMonth._logged = false;  // reset debug log for new data
-  // Rule: month chips and date filter are mutually exclusive
-  if (DATE_MODE) {
-    DATE_MODE = false;
-    activeDateFrom = null; activeDateTo = null;
-    var dfEl = document.getElementById("dateFrom"); if (dfEl) dfEl.value = "";
-    var dtEl = document.getElementById("dateTo");   if (dtEl) dtEl.value = "";
-    var dcEl = document.getElementById("dateClearBtn"); if (dcEl) dcEl.style.display = "none";
-    var daEl = document.getElementById("dateApplyBtn"); if (daEl) daEl.style.fontWeight = "";
-  }
+
   updateRangeBadge();
   if (Object.keys(DATA).length > 0) renderAll();
 }
@@ -770,15 +761,6 @@ function updateRangeBadge() {
 // Filter DATA rows by currently selected months
 function filterByMonth(rows) {
   if (!selectedMonths.length) return rows;
-
-  // Debug: log what month_labels are actually in the data (once)
-  if (!filterByMonth._logged && rows.length > 0) {
-    filterByMonth._logged = true;
-    var actualLabels = {};
-    rows.forEach(function(r){ actualLabels[r.month_label] = 1; });
-    console.log("[TAT] Actual month_labels in DATA:", Object.keys(actualLabels));
-    console.log("[TAT] selectedMonths:", selectedMonths);
-  }
 
   // Normalise both sides: lowercase + collapse spaces for comparison
   var normSelected = selectedMonths.map(function(m){ return m.trim().toLowerCase(); });
@@ -859,86 +841,84 @@ function apiFetch(url, timeoutMs) {
 }
 
 // ── Date filter functions ─────────────────────────────────────
-function onDateInput() {
-  var applyBtn = document.getElementById("dateApplyBtn");
-  var from = document.getElementById("dateFrom").value;
-  var to   = document.getElementById("dateTo").value;
-  if (applyBtn) applyBtn.style.fontWeight = (from || to) ? "700" : "";
+
+
+
+
+
+
+// ══════════════════════════════════════════════════════════
+// SECTION-LEVEL DATE FILTERS
+// Each section can have its own date range, independent of month chips.
+// When active, completely disables month filter linkage for that section.
+// ══════════════════════════════════════════════════════════
+var SEC_DATES = {};  // { 'tat':{from:'',to:''}, 'tier':{...}, ... }
+
+function applySecDate(sec) {
+  var fromEl = document.getElementById(sec === 'coll' ? 'collDateFrom' :
+               sec === 'wh' ? 'whDateFrom' :
+               sec + 'DateFrom');
+  var toEl   = document.getElementById(sec === 'coll' ? 'collDateTo' :
+               sec === 'wh' ? 'whDateTo'   :
+               sec + 'DateTo');
+  var clearEl = document.getElementById(sec === 'coll' ? 'collDateClear' :
+                sec === 'wh' ? 'whDateClear' :
+                sec + 'DateClear');
+  if (!fromEl) return;
+  var from = fromEl.value;
+  var to   = toEl   ? toEl.value : '';
+  if (!from && !to) { clearSecDate(sec); return; }
+  SEC_DATES[sec] = { from: from || null, to: to || null };
+  if (clearEl) clearEl.style.display = 'inline-block';
+  renderAll();
 }
 
-function applyDateFilter() {
-  var from = document.getElementById("dateFrom").value;
-  var to   = document.getElementById("dateTo").value;
-  if (!from && !to) { clearDateFilter(); return; }
-  activeDateFrom = from || null;
-  activeDateTo   = to   || null;
-  DATE_MODE      = true;
-  selectedMonths = [];
-  MONTH_ORDER.forEach(function(m) {
-    var el = document.getElementById("chip-" + m.replace(/ /g,"_"));
-    if (el) el.classList.remove("on");
-  });
-  var allChip = document.getElementById("chip-ALL");
-  if (allChip) allChip.classList.remove("on");
-  var c = document.getElementById("dateClearBtn"); if (c) c.style.display = "inline-block";
-  var rb = document.getElementById("rangeBadge");
-  if (rb) { rb.textContent = (from || "…") + " → " + (to || "…"); rb.style.display = "inline-block"; }
-  if (Object.keys(DATA).length > 0) renderAll();
-}
-
-function clearDateFilter() {
-  activeDateFrom = null; activeDateTo = null; DATE_MODE = false;
-  var f = document.getElementById("dateFrom");    if (f) f.value = "";
-  var t = document.getElementById("dateTo");      if (t) t.value = "";
-  var c = document.getElementById("dateClearBtn"); if (c) c.style.display = "none";
-  var a = document.getElementById("dateApplyBtn"); if (a) a.style.fontWeight = "";
-  var allChip = document.getElementById("chip-ALL"); if (allChip) allChip.classList.add("on");
-  updateRangeBadge();
-  if (Object.keys(DATA).length > 0) renderAll();
-}
-
-function parseDate(s) { return s ? new Date(s + "T00:00:00Z") : null; }
-
-function filterByDateRange(rows) {
-  if (!DATE_MODE || (!activeDateFrom && !activeDateTo)) return rows;
-  var from = parseDate(activeDateFrom);
-  var to   = parseDate(activeDateTo);
-  function monthToRange(label) {
-    var mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-    var yr = parseInt("20" + label.slice(3), 10);
-    var mIdx = mo[label.slice(0,3)];
-    if (mIdx === undefined || isNaN(yr)) return null;
-    return { start: new Date(Date.UTC(yr,mIdx,1)), end: new Date(Date.UTC(yr,mIdx+1,0)) };
+function clearSecDate(sec) {
+  SEC_DATES[sec] = null;
+  var ids = {
+    tat:['tatDateFrom','tatDateTo','tatDateClear'],
+    tier:['tierDateFrom','tierDateTo','tierDateClear'],
+    wh:['whDateFrom','whDateTo','whDateClear'],
+    courier:['courierDateFrom','courierDateTo','courierDateClear'],
+    coll:['collDateFrom','collDateTo','collDateClear']
+  };
+  if (ids[sec]) {
+    ids[sec].forEach(function(id) {
+      var el = document.getElementById(id);
+      if (!el) return;
+      if (el.type === 'date') el.value = '';
+      else el.style.display = 'none';
+    });
   }
+  if (Object.keys(DATA).length > 0) renderAll();
+}
+
+// Filter rows by a section-specific date range
+// Rows whose month_label overlaps the range are kept
+function filterBySecDate(rows, sec) {
+  var d = SEC_DATES[sec];
+  if (!d || (!d.from && !d.to)) return null;  // null = use month filter
+  var from = d.from ? new Date(d.from + 'T00:00:00Z') : null;
+  var to   = d.to   ? new Date(d.to   + 'T00:00:00Z') : null;
+  var mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
   return rows.filter(function(r) {
-    var range = monthToRange(r.month_label || "");
-    if (!range) return true;
-    if (from && range.end   < from) return false;
-    if (to   && range.start > to)   return false;
+    var lbl = r.month_label || '';
+    var yr  = parseInt('20' + lbl.slice(3), 10);
+    var mi  = mo[lbl.slice(0,3)];
+    if (isNaN(yr) || mi === undefined) return true;
+    var mStart = new Date(Date.UTC(yr, mi, 1));
+    var mEnd   = new Date(Date.UTC(yr, mi+1, 0));
+    if (from && mEnd   < from) return false;
+    if (to   && mStart > to)   return false;
     return true;
   });
 }
 
-function partialMonthFraction(monthLabel) {
-  if (!DATE_MODE) return 1;
-  var mo = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-  var yr   = parseInt("20" + monthLabel.slice(3), 10);
-  var mIdx = mo[monthLabel.slice(0,3)];
-  if (mIdx === undefined || isNaN(yr)) return 1;
-  var mStart = new Date(Date.UTC(yr,mIdx,1));
-  var mEnd   = new Date(Date.UTC(yr,mIdx+1,0));
-  var rFrom  = activeDateFrom ? parseDate(activeDateFrom) : mStart;
-  var rTo    = activeDateTo   ? parseDate(activeDateTo)   : mEnd;
-  var effFrom = rFrom > mStart ? rFrom : mStart;
-  var effTo   = rTo   < mEnd   ? rTo   : mEnd;
-  if (effTo < effFrom) return 0;
-  return Math.min(1, (Math.round((effTo - effFrom)/86400000) + 1) / mEnd.getUTCDate());
-}
-
-function isPartialMonth(monthLabel) {
-  if (!DATE_MODE) return false;
-  var frac = partialMonthFraction(monthLabel);
-  return frac > 0 && frac < 0.99;
+// Get rows for a section: sec date filter takes priority over month chips
+function secRows(rows, sec) {
+  var byDate = filterBySecDate(rows, sec);
+  if (byDate !== null) return byDate;
+  return filterByMonth(rows);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -947,8 +927,7 @@ function isPartialMonth(monthLabel) {
 function refreshDashboard() {
   if (!GAS_URL) { showToast("error", "No Apps Script URL — open Config > Settings"); return; }
 
-  var month = document.getElementById("monthFilter").value;
-  var gran  = document.getElementById("granFilter").value;
+  var gran = "month"; // always fetch month-level
 
   var btn = document.getElementById("refreshBtn");
   btn.disabled = true;
@@ -965,7 +944,7 @@ function refreshDashboard() {
     // Always fetch dimensional data at month granularity — this ensures
   // all months have data regardless of the gran selector.
   // Only overall is also fetched at the selected granularity for trend charts.
-  var mParam = month !== "ALL" ? month : null;
+  var mParam = null; // month filter applied client-side
   var fetchAll = [
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:gran,    dimension:"overall",   months:mParam }), 60000),
     apiFetch(buildUrl(GAS_URL, { action:"getDashboard", granularity:"month", dimension:"tier",       months:mParam }), 60000),
@@ -1034,51 +1013,63 @@ function refreshDashboard() {
 // RENDER ALL
 // ══════════════════════════════════════════════════════════
 function renderAll() {
-  var overall   = filterByMonth(DATA.overall   || []);
-  var tierRows  = filterByMonth(DATA.tier      || []);
-  var whRows    = filterByMonth(DATA.warehouse || []);
-  var courier   = filterByMonth(DATA.courier   || []);
-  var city      = filterByMonth(DATA.city      || []);
-  var state     = filterByMonth(DATA.state     || []);
-  var statusR   = filterByMonth(DATA.status    || []);
+  // ── Overview: unfiltered overall + month-filtered status/tat ──
+  var overallAll  = DATA.overall || [];
+  var statusR     = filterByMonth(DATA.status || []);
+  var agg         = aggRows(overallAll);          // scorecards: all months
   updateRangeBadge();
 
-  // Aggregate overall rows into a single summary for scorecards
-  var agg = aggRows(overall);
-
   renderKPIs(agg);
-  renderBuckets(agg);
+  renderBuckets(aggRows(filterByMonth(overallAll)));  // TAT Distribution — month-filtered
   deferChart("overview", function() {
-    renderVolTrend(overall);
-    renderStatusDonut(statusR);
+    renderVolTrend(overallAll);                   // trend: all months
+    renderStatusDonut(statusR);                   // status: month-filtered
   });
+
+  // ── Tier: section date filter OR month filter ──
+  var tierRows = secRows(DATA.tier || [], 'tier');
   renderTierSection(tierRows);
+
+  // ── Geo: month filter ──
+  var city  = filterByMonth(DATA.city  || []);
+  var state = filterByMonth(DATA.state || []);
   renderGeoSection(city, state);
-  // whDayRows: NOT filtered by month — heatmap always shows last 30 days rolling
-  var whDayRows   = DATA.whday   || [];
-  var whSplitRows = filterByMonth(DATA.whsplit || []);
-  // Render in layout order: bucket → heatmap → split → detail
+
+  // ── Warehouse ──
+  var whRows      = secRows(DATA.warehouse || [], 'wh');
+  var whSplitRows = secRows(DATA.whsplit   || [], 'wh');
+  var whDayRows   = DATA.whday || [];              // heatmap: never month-filtered
   renderWhBucketTable(whRows);
   renderWhHeatmap(whDayRows);
   renderWhSplitTable(whSplitRows);
   renderWarehouseSection(whRows);
+
+  // ── Courier: section date filter OR month filter ──
+  var courier = secRows(DATA.courier || [], 'courier');
   renderCourierSection(courier);
-  var overallMonth = filterByMonth(DATA.overall_month || DATA.overall || []);
+
+  // ── Collections: section date filter OR month filter ──
+  var collRows    = secRows(DATA.overall || [], 'coll');
+  var collStatus  = secRows(DATA.status  || [], 'coll');
+  var collTier    = secRows(DATA.tier    || [], 'coll');
+  renderCollectionsSection(collRows, collStatus, collTier);
+
+  // ── TAT Deep Dive ──
+  var overallMonth  = DATA.overall_month || DATA.overall || [];
   var tier1CityRows = filterByMonth(DATA.tier1city || []);
+  // Tier1 Bucket uses section date filter; Monthly TAT table uses month filter
+  var t1BucketRows  = secRows(DATA.tier1city || [], 'tat');
+  var tatTableRows  = filterByMonth(overallMonth);
+
   deferChart("tat", function() {
-    renderTier1CityTable(tier1CityRows);
-    renderTier1BucketTable(tier1CityRows);
-    renderTATTable(overallMonth);
-    renderTier1TatTable(tier1CityRows);
-    renderTATTrend(overallMonth);
-    renderBreachTrend(overallMonth);
-    renderT1TatTrend(tier1CityRows);
-    renderT1BreachTrend(tier1CityRows);
+    renderTier1BucketTable(t1BucketRows);         // sec date or month filter
+    renderTATTable(tatTableRows);                 // month filter
+    // Weekly trends (week_label based)
+    renderWeeklyTATTrend(overallMonth);
+    renderWeeklyBreachTrend(overallMonth);
+    renderWeeklyT1TatTrend(tier1CityRows);
+    renderWeeklyT1BreachTrend(tier1CityRows);
   });
-  deferChart("trends", function() {
-    renderWeeklyCharts(overall);
-  });
-  renderRevenueSection(overall, statusR);
 }
 
 // ══════════════════════════════════════════════════════════
@@ -1318,6 +1309,76 @@ function renderTATTrend(rows) {
   },{plugins:{legend:{display:false}},scales:{x:xA(""),y:{...yA("Days"),beginAtZero:true}}});
 }
 
+// Weekly versions — use week_label from analytics_cache week-granularity rows
+function renderWeeklyTATTrend(rows) {
+  var weekly = rows.filter(function(r){ return r.dimension_value==="overall" && r.week_label; });
+  if (!weekly.length) { renderTATTrend(rows); return; }
+  weekly.sort(function(a,b){
+    return a.month_label < b.month_label ? -1 : a.month_label > b.month_label ? 1 :
+           (a.week_label < b.week_label ? -1 : 1);
+  });
+  mkChart("tatTrendChart","line",{
+    labels: weekly.map(function(r){ return r.week_label; }),
+    datasets:[{label:"Avg TAT",data:weekly.map(function(r){return r.avg_delivery_tat;}),
+      borderColor:"#2563EB",backgroundColor:"rgba(37,99,235,.08)",borderWidth:2,pointRadius:3,tension:.35,fill:true}]
+  },{plugins:{legend:{display:false}},scales:{x:xA(""),y:{...yA("Days"),beginAtZero:true}}});
+}
+
+function renderWeeklyBreachTrend(rows) {
+  var weekly = rows.filter(function(r){ return r.dimension_value==="overall" && r.week_label; });
+  if (!weekly.length) { renderBreachTrend(rows); return; }
+  weekly.sort(function(a,b){
+    return a.month_label < b.month_label ? -1 : a.month_label > b.month_label ? 1 :
+           (a.week_label < b.week_label ? -1 : 1);
+  });
+  mkChart("breachTrendChart","bar",{
+    labels: weekly.map(function(r){ return r.week_label; }),
+    datasets:[{label:"Breach %",data:weekly.map(function(r){return r.pct_breach;}),
+      backgroundColor:"rgba(239,68,68,.18)",borderColor:"#EF4444",borderWidth:1.5,borderRadius:4}]
+  }, barOpts("%"));
+}
+
+function renderWeeklyT1TatTrend(rows) {
+  var weekly = rows.filter(function(r){ return r.week_label; });
+  if (!weekly.length) { renderT1TatTrend(rows); return; }
+  // group by city × week
+  var weekSet = {};
+  weekly.forEach(function(r){ weekSet[r.month_label+'|'+r.week_label] = r; });
+  var orderedWeeks = Object.keys(weekSet).sort();
+  var labels = orderedWeeks.map(function(k){ return k.split('|')[1]; });
+  var datasets = TIER1_CITIES.map(function(city, ci) {
+    var color = T1_COLORS[ci] || ["#6B7280","rgba(107,114,128,.1)"];
+    var m = {};
+    weekly.filter(function(r){ return r.dimension_value===city; })
+          .forEach(function(r){ m[r.month_label+'|'+r.week_label] = r.avg_delivery_tat; });
+    return { label:city, data:orderedWeeks.map(function(k){ return m[k]!=null?m[k]:null; }),
+      borderColor:color[0],backgroundColor:color[1],borderWidth:2,pointRadius:2,tension:.3,fill:false,spanGaps:true };
+  }).filter(function(ds){ return ds.data.some(function(v){return v!=null;}); });
+  mkChart("t1TatTrendChart","line",{labels:labels,datasets:datasets},
+    {plugins:{legend:{position:"right",labels:{font:{family:"IBM Plex Mono",size:10},boxWidth:9,padding:8}}},
+     scales:{x:xA(""),y:{...yA("Days"),beginAtZero:true}}});
+}
+
+function renderWeeklyT1BreachTrend(rows) {
+  var weekly = rows.filter(function(r){ return r.week_label; });
+  if (!weekly.length) { renderT1BreachTrend(rows); return; }
+  var weekSet = {};
+  weekly.forEach(function(r){ weekSet[r.month_label+'|'+r.week_label] = r; });
+  var orderedWeeks = Object.keys(weekSet).sort();
+  var labels = orderedWeeks.map(function(k){ return k.split('|')[1]; });
+  var datasets = TIER1_CITIES.map(function(city, ci) {
+    var color = T1_COLORS[ci] || ["#6B7280","rgba(107,114,128,.1)"];
+    var m = {};
+    weekly.filter(function(r){ return r.dimension_value===city; })
+          .forEach(function(r){ m[r.month_label+'|'+r.week_label] = r.pct_breach; });
+    return { label:city, data:orderedWeeks.map(function(k){ return m[k]!=null?m[k]:null; }),
+      borderColor:color[0],backgroundColor:color[1],borderWidth:2,pointRadius:2,tension:.3,fill:false,spanGaps:true };
+  }).filter(function(ds){ return ds.data.some(function(v){return v!=null;}); });
+  mkChart("t1BreachTrendChart","line",{labels:labels,datasets:datasets},
+    {plugins:{legend:{position:"right",labels:{font:{family:"IBM Plex Mono",size:10},boxWidth:9,padding:8}}},
+     scales:{x:xA(""),y:{...yA("%"),beginAtZero:true,max:100}}});
+}
+
 function renderBreachTrend(rows) {
   if (!rows.length) return;
   var sorted = sortByMonthLabel(rows.filter(function(r){return r.dimension_value==="overall";}));
@@ -1544,58 +1605,6 @@ function renderT1BreachTrend(rows) {
 }
 
 // ── Tier 1 Cities — Monthly TAT Performance Table ────────────
-function renderTier1TatTable(rows) {
-  var container = document.getElementById("tier1TatTable");
-  if (!container) return;
-  if (!rows || !rows.length) {
-    container.innerHTML = "<div class='empty'><p>No Tier 1 data</p></div>"; return;
-  }
-
-  // months in descending order
-  var months = MONTH_ORDER.filter(function(m) {
-    return rows.some(function(r) { return r.month_label === m; });
-  }).slice().reverse();
-
-  // Aggregate all cities into per-month totals
-  var byMonth = {};
-  rows.forEach(function(r) {
-    var m = r.month_label;
-    if (!byMonth[m]) byMonth[m] = {
-      total:0, del:0, tatS:0, tatN:0, withinS:0, withinN:0, breachS:0, breachN:0,
-      b02:0, b34:0, b57:0, b812:0, bgt:0
-    };
-    var d = byMonth[m];
-    d.total += n(r.total_orders);
-    d.del   += n(r.delivered_orders);
-    if (r.avg_delivery_tat != null) { d.tatS += r.avg_delivery_tat * n(r.delivered_orders); d.tatN += n(r.delivered_orders); }
-    if (r.pct_within_sla != null)   { d.withinS += r.pct_within_sla * n(r.total_orders); d.withinN += n(r.total_orders); }
-    if (r.pct_breach != null)       { d.breachS += r.pct_breach * n(r.total_orders); d.breachN += n(r.total_orders); }
-    d.b02  += n(r.tat_0_2);
-    d.b34  += n(r.tat_3_4);
-    d.b57  += n(r.tat_5_7);
-    d.b812 += n(r.tat_8_12);
-    d.bgt  += n(r.tat_gt12);
-  });
-
-  var headers = ["Month","Total","Delivered","Avg TAT","Within SLA","Breach","TAT 0-2","3-4","5-7","8-12",">12"];
-  var rowData = months.map(function(m) {
-    var d = byMonth[m];
-    if (!d) return [shortMonth(m),"--","--","--","--","--","--","--","--","--","--"];
-    var partial = isPartialMonth(m) ? " *" : "";
-    var avgTat  = d.tatN    ? round2(d.tatS / d.tatN)    : null;
-    var within  = d.withinN ? round2(d.withinS / d.withinN) : null;
-    var breach  = d.breachN ? round2(d.breachS / d.breachN) : null;
-    return [
-      shortMonth(m) + partial,
-      fmtN(d.total), fmtN(d.del),
-      tatBdg(avgTat), pctBdg(within, 80, true), pctBdg(breach, 30, false),
-      fmtN(d.b02), fmtN(d.b34), fmtN(d.b57), fmtN(d.b812), fmtN(d.bgt)
-    ];
-  });
-
-  container.innerHTML = tblHTML(headers, rowData);
-}
-
 
 // ── Warehouse Pickup Timeliness Bucket Table ──────────────────
 // Shows real bucket counts from analytics_cache wh_ideal / wh_plus1..4plus columns
@@ -2017,38 +2026,109 @@ function loadDayLevel() {
   }).catch(function(e){ showToast("error",e.message,0); });
 }
 
-function renderRevenueSection(rows, statusRows) {
+function renderCollectionsSection(rows, statusRows, tierRows) {
   var agg = aggRows(rows);
+  // KPIs with smart Cr/L format
   var kpiDefs = [
-    {lbl:"Total Revenue",    val:"₹"+fmtN(Math.round(agg.total_revenue)),    cls:"bl"},
-    {lbl:"Delivered Revenue",val:"₹"+fmtN(Math.round(agg.delivered_revenue)),cls:"gr"},
-    {lbl:"RTO Revenue",      val:"₹"+fmtN(Math.round(agg.rto_revenue)),      cls:"rd"},
-    {lbl:"RTO Value %",      val:agg.total_revenue?round2(agg.rto_revenue/agg.total_revenue*100)+"%":"--",cls:"am"}
+    {lbl:"Total Collections",    val:fmtCr(agg.total_revenue),    cls:"bl"},
+    {lbl:"Delivered Collections",val:fmtCr(agg.delivered_revenue),cls:"gr"},
+    {lbl:"RTO Value",            val:fmtCr(agg.rto_revenue),      cls:"rd"},
+    {lbl:"RTO Value %",          val:agg.total_revenue?round2(agg.rto_revenue/agg.total_revenue*100)+"%":"--",cls:"am"}
   ];
   document.getElementById("revKPIs").innerHTML = kpiDefs.map(function(d){
     return '<div class="kpi"><div class="kpi-lbl">'+d.lbl+'</div><div class="kpi-val '+d.cls+'">'+d.val+'</div></div>';
   }).join("");
 
+  // Collections Trend chart
   var sorted = sortByMonthLabel(rows.filter(function(r){return r.dimension_value==="overall";}));
-  deferChart("revenue", function() {
+  deferChart("collections", function() {
     mkChart("revTrendChart","bar",{
-      labels:sorted.map(function(r){return r.month_label;}),
+      labels:sorted.map(function(r){return shortMonth(r.month_label);}),
       datasets:[
-        {label:"Total Rev",data:sorted.map(function(r){return n(r.total_revenue);}),backgroundColor:"rgba(37,99,235,.15)",borderColor:"#2563EB",borderWidth:1.5,borderRadius:4,yAxisID:"y"},
-        {label:"RTO Rev",data:sorted.map(function(r){return n(r.rto_revenue);}),backgroundColor:"rgba(239,68,68,.15)",borderColor:"#EF4444",borderWidth:1.5,borderRadius:4,yAxisID:"y"}
+        {label:"Total",data:sorted.map(function(r){return n(r.total_revenue);}),
+          backgroundColor:"rgba(37,99,235,.18)",borderColor:"#2563EB",borderWidth:1.5,borderRadius:4,yAxisID:"y"},
+        {label:"Delivered",data:sorted.map(function(r){return n(r.delivered_revenue);}),
+          type:"line",borderColor:"#059669",backgroundColor:"rgba(5,150,105,.08)",
+          borderWidth:2,pointRadius:3,tension:.3,fill:false,yAxisID:"y"}
       ]
-    },{plugins:{legend:{labels:{color:"#6B7280",font:{size:10},boxWidth:10}}},scales:{x:xA(""),y:{...yA("Revenue"),beginAtZero:true}}});
+    },{plugins:{legend:{labels:{color:"#6B7280",font:{size:10}}}},
+       scales:{x:xA(""),y:{...yA("₹"),beginAtZero:true}}});
 
-    var statusAgg = {};
-    statusRows.forEach(function(r){statusAgg[r.dimension_value]=(statusAgg[r.dimension_value]||0)+n(r.total_revenue);});
-    var sLabels = Object.keys(statusAgg);
-    mkChart("revStatusChart","doughnut",{
-      labels:sLabels,
-      datasets:[{data:sLabels.map(function(l){return statusAgg[l];}),backgroundColor:sLabels.map(function(l){return STATUS_COLORS[l]||"#E5E7EB";}),borderColor:"transparent"}]
-    },{cutout:"60%",plugins:{legend:{position:"right",labels:{color:"#6B7280",font:{family:"IBM Plex Mono",size:10},boxWidth:9,padding:8}}}});
+    // COD vs Prepaid — use status rows, payment_mode from dimension
+    // status dimension has total/delivered by status — use as proxy
+    // Build MoM data from statusRows if available
+    var prepaidStatuses = ["Delivered","In Transit","In Process","Pending","NDR"];
+    var mLabels = sorted.map(function(r){return shortMonth(r.month_label);});
+    mkChart("codPrepaidChart","bar",{
+      labels:mLabels,
+      datasets:[
+        {label:"Delivered Revenue",data:sorted.map(function(r){return n(r.delivered_revenue);}),
+          backgroundColor:"rgba(5,150,105,.2)",borderColor:"#059669",borderWidth:1.5,borderRadius:4},
+        {label:"RTO Value",data:sorted.map(function(r){return n(r.rto_revenue);}),
+          backgroundColor:"rgba(239,68,68,.18)",borderColor:"#EF4444",borderWidth:1.5,borderRadius:4}
+      ]
+    },{plugins:{legend:{labels:{color:"#6B7280",font:{size:10}}}},
+       scales:{x:xA(""),y:{...yA("₹"),beginAtZero:true,stacked:true}}});
   });
-}
 
+  // By Tier table
+  if (tierRows && tierRows.length) {
+    var byTier = {};
+    tierRows.forEach(function(r){
+      var t=r.dimension_value;
+      if(!byTier[t]) byTier[t]={rev:0,del:0,rto:0};
+      byTier[t].rev+=n(r.total_revenue);
+      byTier[t].del+=n(r.delivered_revenue);
+      byTier[t].rto+=n(r.rto_revenue);
+    });
+    var tierEl = document.getElementById("collTierTable");
+    if (tierEl) tierEl.innerHTML = tblHTML(
+      ["Tier","Total Collections","Delivered","RTO","RTO %"],
+      ["Tier 1","Tier 2","Tier 3"].filter(function(t){return byTier[t];}).map(function(t){
+        var d=byTier[t];
+        return [t,fmtCr(d.rev),fmtCr(d.del),fmtCr(d.rto),
+          d.rev?round2(d.rto/d.rev*100)+"%":"--"];
+      })
+    );
+  }
+
+  // Courier Aggregator COD / overall breakdown
+  // Use courier dimension grouped by courier_aggregator (dimension_value)
+  var aggEl = document.getElementById("collAggTable");
+  if (aggEl) {
+    var byAgg = {};
+    (DATA.courier||[]).forEach(function(r){
+      var k = r.dimension_value||"Unknown";
+      if(!byAgg[k]) byAgg[k]={rev:0,del:0};
+      byAgg[k].rev+=n(r.total_revenue);
+      byAgg[k].del+=n(r.delivered_revenue);
+    });
+    var aggs = Object.keys(byAgg).sort(function(a,b){return byAgg[b].rev-byAgg[a].rev;});
+    aggEl.innerHTML = tblHTML(
+      ["Courier / Aggregator","Total","Delivered"],
+      aggs.map(function(k){var d=byAgg[k];return [k,fmtCr(d.rev),fmtCr(d.del)];})
+    );
+  }
+
+  // Month × tier breakdown table
+  var maEl = document.getElementById("collMonthAggTable");
+  if (maEl && tierRows && tierRows.length) {
+    var months = MONTH_ORDER.filter(function(m){
+      return tierRows.some(function(r){return r.month_label===m;});
+    }).slice().reverse();
+    var tiers = ["Tier 1","Tier 2","Tier 3"];
+    var pivot = {};
+    tierRows.forEach(function(r){
+      if(!pivot[r.dimension_value]) pivot[r.dimension_value]={};
+      pivot[r.dimension_value][r.month_label]=(pivot[r.dimension_value][r.month_label]||0)+n(r.total_revenue);
+    });
+    var headers = ["Tier"].concat(months.map(shortMonth));
+    var rowData = tiers.filter(function(t){return pivot[t];}).map(function(t){
+      return [t].concat(months.map(function(m){return fmtCr(pivot[t][m]||0);}));
+    });
+    maEl.innerHTML = tblHTML(headers, rowData);
+  }
+}
 // ══════════════════════════════════════════════════════════
 // UPLOAD MONTH
 // ══════════════════════════════════════════════════════════
@@ -2262,7 +2342,7 @@ function saveConfig() {
   GAS_URL = document.getElementById("gasUrl").value.trim();
   localStorage.setItem("tat_gas_url", GAS_URL);
   localStorage.setItem("tat_months",  JSON.stringify(MONTHS_CFG));
-  buildMonthSelect("monthFilter");
+  
   buildMonthSelect("upMonth");
   closeConfig();
   showToast("success","Settings saved — click Refresh to load data", 4000);
@@ -2309,6 +2389,14 @@ function pctBdg(v, thr, hi) {
 }
 function n(v) { return (v===null||v===undefined) ? 0 : parseFloat(v)||0; }
 function fmtN(v) { return v!=null ? Number(v).toLocaleString("en-IN") : "--"; }
+function fmtCr(v) {
+  if (v==null||isNaN(v)) return "--";
+  var x = Math.abs(v);
+  if (x>=10000000) return "₹"+round2(v/10000000)+"Cr";
+  if (x>=100000)   return "₹"+round2(v/100000)+"L";
+  if (x>=1000)     return "₹"+round2(v/1000)+"K";
+  return "₹"+Math.round(v).toLocaleString("en-IN");
+}
 function round2(v) { return Math.round(v*100)/100; }
 function escHtml(s) { return String(s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
 </script>
